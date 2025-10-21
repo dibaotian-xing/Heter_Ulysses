@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import types
 import warnings
+import numpy as np
 
 import torch
 import torch.nn.functional as F
@@ -1001,6 +1002,26 @@ def validate_args(args, defaults={}):
     # Context parallel
     if args.context_parallel_size > 1:
         assert not args.use_legacy_models, "Context parallelism is not supported in legacy models."
+        if args.heter_ulysses_config_path is not None:
+            assert args.cp_comm_type == 'a2a' and args.hierarchical_context_parallel_sizes is None, \
+                "heterogeneous context parallel only supports pure ulysses now!"
+            assert os.path.exists(args.heter_ulysses_config_path), \
+                f"{args.heter_ulysses_config_path=} does not exist!"
+            assert args.tensor_model_parallel_size == 1 and args.pipeline_model_parallel_size == 1 \
+                and args.expert_model_parallel_size == 1 and args.context_parallel_size == args.world_size, \
+                "heterogeneous context parallel can't integrate with other parallel strategies now!"
+            with open(args.heter_ulysses_config_path, 'r') as f:
+                heter_ulysses_dict = json.load(f)
+            gpu_nums = np.array(heter_ulysses_dict['gpu_nums'])
+            heter_ulysses_seq_lens = np.array(heter_ulysses_dict['seq_lens'])
+            heter_ulysses_headnums = np.array(heter_ulysses_dict['headnums'])
+            assert gpu_nums.sum() == args.world_size, "incorrect gpu_nums in heterogeneous ulysses config!"
+            assert heter_ulysses_seq_lens.sum() == args.seq_length, \
+                "incorrect seq_lens in heterogeneous ulysses config!"
+            assert heter_ulysses_headnums.sum() == args.num_attention_heads, \
+                "incorrect headnums in heterogeneous ulysses config!"
+            args.heter_ulysses_seq_lens = heter_ulysses_seq_lens
+            args.heter_ulysses_headnums = heter_ulysses_headnums
 
     # Expert parallelism check
     if args.expert_model_parallel_size  > 1:
@@ -2658,6 +2679,10 @@ def _add_distributed_args(parser):
                        '--hierarchical-context-parallel-sizes 2 4 indicates every two adjacent gpus '
                        'forms the first level of cp groups and the cp ranks with the same odevity '
                        'forms the second level of cp groups.')
+    group.add_argument('--heter-ulysses-config-path', type=str, default=None,
+                       help='Path to the json file with heterogeneous ulysses config.'
+                       'It should contain the number of gpus for different gpu types, '
+                       'and the sequence length and the number of attention head each gpu handles')
     group.add_argument('--nccl-communicator-config-path', type=str, default=None,
                        help='Path to the yaml file with NCCL communicator '
                        'configurations. The number of min/max thread groups and thread '
