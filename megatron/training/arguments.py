@@ -1003,7 +1003,8 @@ def validate_args(args, defaults={}):
     if args.context_parallel_size > 1:
         assert not args.use_legacy_models, "Context parallelism is not supported in legacy models."
         if args.heter_ulysses_config_path is not None:
-            assert args.cp_comm_type == 'a2a' and args.hierarchical_context_parallel_sizes is None, \
+            assert len(args.cp_comm_type) == 1 and args.cp_comm_type[0] == 'a2a' and \
+                args.hierarchical_context_parallel_sizes is None, \
                 "heterogeneous context parallel only supports pure ulysses now!"
             assert os.path.exists(args.heter_ulysses_config_path), \
                 f"{args.heter_ulysses_config_path=} does not exist!"
@@ -1020,8 +1021,8 @@ def validate_args(args, defaults={}):
                 "incorrect seq_lens in heterogeneous ulysses config!"
             assert heter_ulysses_headnums.sum() == args.num_attention_heads, \
                 "incorrect headnums in heterogeneous ulysses config!"
-            args.heter_ulysses_seq_lens = heter_ulysses_seq_lens
-            args.heter_ulysses_headnums = heter_ulysses_headnums
+            args.heter_ulysses_seq_lens = torch.from_numpy(heter_ulysses_seq_lens)
+            args.heter_ulysses_headnums = torch.from_numpy(heter_ulysses_headnums)
 
     # Expert parallelism check
     if args.expert_model_parallel_size  > 1:

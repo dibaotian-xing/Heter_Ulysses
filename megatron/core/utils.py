@@ -24,7 +24,6 @@ from functools import lru_cache, reduce, wraps
 from importlib.metadata import version
 from types import TracebackType
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
-from megatron.training import get_args
 
 import torch
 
@@ -1814,12 +1813,13 @@ def get_batch_on_this_cp_rank(batch: Dict[str, Any]):
     # and chunk_3 are assigned to GPU0, chunk_1 and chunk_2 are assigned to GPU1, so
     # that we can get balanced workload among GPUs in a context parallel group.
     cp_size = parallel_state.get_context_parallel_world_size()
+    from megatron.training import get_args
     args = get_args()
     if cp_size > 1:
         cp_rank = parallel_state.get_context_parallel_rank()
         for key, val in batch.items():
             if val is not None:
-                if args.heter_ulysses_config_path is not None:
+                if args.heter_ulysses_config_path is None:
                     seq_dim = 1 if key != "attention_mask" else 2
                     val = val.view(
                         *val.shape[0:seq_dim],
@@ -1835,7 +1835,7 @@ def get_batch_on_this_cp_rank(batch: Dict[str, Any]):
                     batch[key] = val
                 else:
                     # heterogeneous ulysses, only support pure ulysses, no need for load balance now
-                    seqlen_splits = args.heter_ulysses_seq_lens
+                    seqlen_splits = args.heter_ulysses_seq_lens.tolist()
                     seq_dim = 1 if key != "attention_mask" else 2
                     val_splits = torch.split(val, seqlen_splits, dim=seq_dim)
                     val = val_splits[cp_rank]
