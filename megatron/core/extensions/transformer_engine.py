@@ -985,7 +985,7 @@ class TEDotProductAttention(te.pytorch.DotProductAttention):
         if args.context_parallel_size > 1 and args.heter_ulysses_config_path is not None:
             extra_kwargs['seqlen_tot'] = args.seq_length
             extra_kwargs['seqlen_per_gpu'] = args.heter_ulysses_seq_lens
-            extra_kwargs['headnum_per_gpu'] = args.heter_ulysses_headnums
+            extra_kwargs['headnum_per_gpu_kv'] = args.heter_ulysses_headnums_kv
 
         if get_te_version() < PkgVersion("1.10.0"):
             # TE 1.8.0 introduces cu_seqlens_padded which is the cu_seqlens with paddings counted

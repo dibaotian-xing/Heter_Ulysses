@@ -1015,14 +1015,15 @@ def validate_args(args, defaults={}):
                 heter_ulysses_dict = json.load(f)
             gpu_nums = np.array(heter_ulysses_dict['gpu_nums'])
             heter_ulysses_seq_lens = np.array(heter_ulysses_dict['seq_lens'])
-            heter_ulysses_headnums = np.array(heter_ulysses_dict['headnums'])
+            heter_ulysses_headnums_kv = np.array(heter_ulysses_dict['headnums_kv'])
             assert gpu_nums.sum() == args.world_size, "incorrect gpu_nums in heterogeneous ulysses config!"
             assert heter_ulysses_seq_lens.sum() == args.seq_length, \
                 "incorrect seq_lens in heterogeneous ulysses config!"
-            assert heter_ulysses_headnums.sum() == args.num_attention_heads, \
+            assert (not args.group_query_attention and heter_ulysses_headnums_kv.sum() == args.num_attention_heads)\
+                or (args.group_query_attention and heter_ulysses_headnums_kv.sum() == args.num_query_groups), \
                 "incorrect headnums in heterogeneous ulysses config!"
             args.heter_ulysses_seq_lens = torch.from_numpy(heter_ulysses_seq_lens)
-            args.heter_ulysses_headnums = torch.from_numpy(heter_ulysses_headnums)
+            args.heter_ulysses_headnums_kv = torch.from_numpy(heter_ulysses_headnums_kv)
 
     # Expert parallelism check
     if args.expert_model_parallel_size  > 1:

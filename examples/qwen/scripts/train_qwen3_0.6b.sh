@@ -4,6 +4,7 @@
 
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export CUDA_DEVICE_MAX_CONNECTIONS=1
+# export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1
 
 GPUS_PER_NODE=4
 # Change for multinode config
@@ -78,6 +79,7 @@ MODEL_PARALLEL_ARGS=(
     --cp-comm-type a2a 
     --heter-ulysses-config-path examples/qwen/config/qwen3_0.6b_seq4096.json
 )
+#
 
 DATA_ARGS=(
     --tokenizer-type HuggingFaceTokenizer
