@@ -2,11 +2,11 @@
 
 # Runs the Qwen3 0.6B model
 
-export CUDA_VISIBLE_DEVICES=0,1,2,3
+export CUDA_VISIBLE_DEVICES=3,4
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 # export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1
 
-GPUS_PER_NODE=4
+GPUS_PER_NODE=2
 # Change for multinode config
 MASTER_ADDR=localhost
 MASTER_PORT=6000
@@ -75,11 +75,10 @@ TRAINING_ARGS=(
 MODEL_PARALLEL_ARGS=(
 	--tensor-model-parallel-size 1 
 	--pipeline-model-parallel-size 1
-    --context-parallel-size 4
-    --cp-comm-type a2a 
-    --heter-ulysses-config-path examples/qwen/config/qwen3_0.6b_seq4096.json
+    --context-parallel-size 2
+    --cp-comm-type a2a  
 )
-#
+# --heter-ulysses-config-path examples/qwen/config/qwen3_0.6b_seq4096.json
 
 DATA_ARGS=(
     --tokenizer-type HuggingFaceTokenizer
@@ -95,7 +94,7 @@ EVAL_AND_LOGGING_ARGS=(
     --save $CHECKPOINT_PATH 
     --load $CHECKPOINT_PATH 
     --eval-iters 10
-    --train-iters 5
+    --train-iters 100
 )
 
 torchrun ${DISTRIBUTED_ARGS[@]} pretrain_gpt.py \
@@ -103,4 +102,4 @@ torchrun ${DISTRIBUTED_ARGS[@]} pretrain_gpt.py \
     ${TRAINING_ARGS[@]} \
     ${MODEL_PARALLEL_ARGS[@]} \
     ${DATA_ARGS[@]} \
-    ${EVAL_AND_LOGGING_ARGS[@]} 2>&1 | tee logs/homo-ulysses-4a6000-`date +%F-%H%M`.log
+    ${EVAL_AND_LOGGING_ARGS[@]} 2>&1 | tee logs/homo-ulysses-2a6000-`date +%F-%H%M`.log
