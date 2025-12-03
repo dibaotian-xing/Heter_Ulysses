@@ -39,14 +39,16 @@ class IPAlg:
         mem_a(int): the memory cost of activation per attention head when compute attention block 
         mem_l(int): the memory cost of activation per token when compute the whole transformer layer 
                     (except attention block)
-        M: the memory capacity for activations of per gpu type
-        bsz: training batch size
-        hd: hidden size per attention head
-        precision: fp32, fp16 or bf16
+        mem_e(int): the sum of activation memory cost per token in non-transformer layers
+        M(np.ndarray): the memory capacity for activations of per gpu type
+        bsz(int): training batch size
+        hd(int): hidden size per attention head
+        nt(int): the number of transformer layers in the model
+        precision(string): fp32, fp16 or bf16
     """
 
     def __init__(self, num_gpu_type, gpu_nums, sl_tot, hn_tot, comm_e, 
-                    time_a, time_l, mem_a, mem_l, M, bsz, hd, precision) -> None:
+                    time_a, time_l, mem_a, mem_l, mem_e, M, bsz, hd, nt, precision) -> None:
         assert gpu_nums.ndim == 1
         assert time_a.ndim == 1
         assert time_l.ndim == 1
@@ -66,9 +68,11 @@ class IPAlg:
         self.time_l = time_l
         self.mem_a = mem_a
         self.mem_l = mem_l
+        self.mem_e = mem_e
         self.M = M
         self.bsz = bsz
         self.hd = hd
+        self.nt = nt
         self.c_type = 2 if precision in ('fp16', 'bf16') else 4
 
         self.model = gp.Model("Minimize heterogeneous Deepspeed Ulysses")
@@ -91,7 +95,10 @@ class IPAlg:
         self.model.addConstr(self.sl_tot == gp.quicksum(seqlens * self.gpu_nums))
         self.model.addConstr(self.hn_tot == gp.quicksum(headnums * self.gpu_nums))
         for i in range(self.num_gpu_type):
-            self.model.addConstr(self.M[i] >= self.bsz * (self.mem_a * headnums[i] + self.mem_l * seqlens[i]))
+            self.model.addConstr(
+                self.M[i] >= self.bsz * \
+                    (self.mem_e * seqlens[i] + self.nt * (self.mem_a * headnums[i] + self.mem_l * seqlens[i]))
+            )
         
         all2all_times = self.model.addMVar((self.num_gpu_type), vtype=GRB.CONTINUOUS)
         for i in range(self.num_gpu_type):
@@ -137,9 +144,11 @@ time_o_tmp = (1.6565558314323425 - time_a_tmp * hn_tot) / sl_tot
 time_l = np.array([time_o_tmp, time_o_tmp * 1.2])
 hd = 128
 bsz = 1
+nt = 32
 # softmax fp32 others fp16, QK^T, softmax(QK^T), softmax(QK^T)V
-mem_a = 32 * (2 * (sl_tot * sl_tot * (2 + 4)) + sl_tot * hd * 2)
-mem_l = int(32 * (636.015625 * 1024 * 1024 - mem_a * hn_tot) / sl_tot + 0.5)
+mem_a = 2 * (sl_tot * sl_tot * (2 + 4)) + sl_tot * hd * 2
+mem_l = int((636.015625 * 1024 * 1024 - mem_a * hn_tot) / sl_tot + 0.5)
+mem_e = int(84.0595703125 * 1024 * 1024 / 1024 + 0.5)
 M_tmp = int((32 - 7 * 16 * (1 / 8 + 0.003)) * 1024 * 1024 * 1024) 
 M = np.array([M_tmp, M_tmp])
 print(M)
@@ -155,9 +164,11 @@ ipalg = IPAlg(
             time_l,
             mem_a,
             mem_l,
+            mem_e,
             M,
             bsz,
             hd,
+            nt,
             precision
         )
 
