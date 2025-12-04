@@ -30,13 +30,13 @@ class IPAlg:
         num_gpu_type(int): number of gpu types
         gpu_nums(np.ndarray): gpu numbers of per gpu type
         sl_tot(int): the seqlen of the whole training process
-        hn_tot(int): the attention head num of the whole training process
+        gn_tot(int): number of GQA groups of the whole training process
         comm_e(float): the communication coefficient between different gpus
-        time_a(np.ndarray): time to compute forward propagation of a single head of attention 
+        time_g(np.ndarray): time to compute forward propagation of a single GQA group of attention 
                     for the whole sequence per gpu type
         time_l(np.ndarray): time of per gpu type to compute forward propagation of the whole transformer layer 
                     (except attention block) for a single token
-        mem_a(int): the memory cost of activation per attention head when compute attention block 
+        mem_g(int): the memory cost of activation per GQA group when compute attention block 
         mem_l(int): the memory cost of activation per token when compute the whole transformer layer 
                     (except attention block)
         mem_e(int): the sum of activation memory cost per token in non-transformer layers
@@ -44,17 +44,18 @@ class IPAlg:
         bsz(int): training batch size
         hd(int): hidden size per attention head
         nt(int): the number of transformer layers in the model
+        nq(int): the number of queries in each GQA group
         precision(string): fp32, fp16 or bf16
     """
 
-    def __init__(self, num_gpu_type, gpu_nums, sl_tot, hn_tot, comm_e, 
-                    time_a, time_l, mem_a, mem_l, mem_e, M, bsz, hd, nt, precision) -> None:
+    def __init__(self, num_gpu_type, gpu_nums, sl_tot, gn_tot, comm_e, 
+                    time_g, time_l, mem_g, mem_l, mem_e, M, bsz, hd, nt, nq, precision) -> None:
         assert gpu_nums.ndim == 1
-        assert time_a.ndim == 1
+        assert time_g.ndim == 1
         assert time_l.ndim == 1
         assert M.ndim == 1
         assert gpu_nums.shape[0] == num_gpu_type
-        assert time_a.shape[0] == num_gpu_type
+        assert time_g.shape[0] == num_gpu_type
         assert time_l.shape[0] == num_gpu_type
         assert M.shape[0] == num_gpu_type
         assert precision in ('fp32', 'fp16', 'bf16')
@@ -62,17 +63,18 @@ class IPAlg:
         self.num_gpu_type = num_gpu_type
         self.gpu_nums = gpu_nums
         self.sl_tot = sl_tot
-        self.hn_tot = hn_tot
+        self.gn_tot = gn_tot
         self.comm_e = comm_e
-        self.time_a = time_a
+        self.time_g = time_g
         self.time_l = time_l
-        self.mem_a = mem_a
+        self.mem_g = mem_g
         self.mem_l = mem_l
         self.mem_e = mem_e
         self.M = M
         self.bsz = bsz
         self.hd = hd
         self.nt = nt
+        self.nq = nq
         self.c_type = 2 if precision in ('fp16', 'bf16') else 4
 
         self.model = gp.Model("Minimize heterogeneous Deepspeed Ulysses")
@@ -89,34 +91,36 @@ class IPAlg:
 
     def _do_fit(self):
         seqlens = self.model.addMVar((self.num_gpu_type), vtype=GRB.INTEGER)
-        headnums = self.model.addMVar((self.num_gpu_type), vtype=GRB.INTEGER)
+        num_gqa_groups = self.model.addMVar((self.num_gpu_type), vtype=GRB.INTEGER)
         self.model.addConstr(seqlens >= 1)
-        self.model.addConstr(headnums >= 1)
+        self.model.addConstr(num_gqa_groups >= 1)
         self.model.addConstr(self.sl_tot == gp.quicksum(seqlens * self.gpu_nums))
-        self.model.addConstr(self.hn_tot == gp.quicksum(headnums * self.gpu_nums))
+        self.model.addConstr(self.gn_tot == gp.quicksum(num_gqa_groups * self.gpu_nums))
         for i in range(self.num_gpu_type):
             self.model.addConstr(
                 self.M[i] >= self.bsz * \
-                    (self.mem_e * seqlens[i] + self.nt * (self.mem_a * headnums[i] + self.mem_l * seqlens[i]))
+                    (self.mem_e * seqlens[i] + self.nt * (self.mem_g * num_gqa_groups[i] + self.mem_l * seqlens[i]))
             )
         
         all2all_times = self.model.addMVar((self.num_gpu_type), vtype=GRB.CONTINUOUS)
         for i in range(self.num_gpu_type):
             self.model.addConstr(
-                all2all_times[i] == self.hd * self.bsz * self.c_type * self.comm_e * \
-                    (headnums[i] * self.sl_tot + seqlens[i] * self.hn_tot - 2 * headnums[i] * seqlens[i])
+                all2all_times[i] == self.hd * self.bsz * self.c_type * self.comm_e * (5 * self.nq + 4) * \
+                    (num_gqa_groups[i] * self.sl_tot + seqlens[i] * self.gn_tot - 2 * num_gqa_groups[i] * seqlens[i])
             )
         all2all_time_max = self.model.addVar(vtype=GRB.CONTINUOUS)
         self.model.addConstr(all2all_time_max == gp.max_(all2all_times.tolist()))
         
         compute_times = self.model.addMVar((self.num_gpu_type), vtype=GRB.CONTINUOUS)
         for i in range(self.num_gpu_type):
-            self.model.addConstr(compute_times[i] == self.bsz * (self.time_a[i] * headnums[i] + self.time_l[i] * seqlens[i]))
+            self.model.addConstr(
+                compute_times[i] == self.bsz * (self.time_g[i] * num_gqa_groups[i] + self.time_l[i] * seqlens[i])
+            )
         compute_time_max = self.model.addVar(vtype=GRB.CONTINUOUS)
         self.model.addConstr(compute_time_max == gp.max_(compute_times.tolist()))
 
         tot_time = self.model.addVar(vtype=GRB.CONTINUOUS)
-        self.model.addConstr(tot_time == all2all_time_max * 9 + compute_time_max * 3)
+        self.model.addConstr(tot_time == all2all_time_max + compute_time_max * 3)
         self.model.setObjective(tot_time, GRB.MINIMIZE)
         self.model.optimize()
 
@@ -129,7 +133,7 @@ class IPAlg:
             # TODO: support more status codes, such as TLE and so on.
             raise RuntimeError(f"Wrong status code {self.model.Status}")
         print("Total time is {}".format(tot_time.X))
-        return tot_time.X, seqlens.X, headnums.X
+        return tot_time.X, seqlens.X, num_gqa_groups.X
 
 
 num_gpu_type = 2
