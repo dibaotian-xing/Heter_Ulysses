@@ -987,6 +987,12 @@ class TEDotProductAttention(te.pytorch.DotProductAttention):
             extra_kwargs['seqlen_per_gpu'] = args.heter_ulysses_seq_lens
             extra_kwargs['headnum_per_gpu_kv'] = args.heter_ulysses_headnums_kv
 
+        if args.profile_heter_ulysses:
+            extra_kwargs['seqlen_tot'] = args.seq_length
+            extra_kwargs['profile_heter_ulysses'] = args.profile_heter_ulysses
+            extra_kwargs['gpu_type_id'] = args.gpu_type_id
+            extra_kwargs['heter_ulysses_model_name'] = args.heter_ulysses_model_name
+
         if get_te_version() < PkgVersion("1.10.0"):
             # TE 1.8.0 introduces cu_seqlens_padded which is the cu_seqlens with paddings counted
             # in each individual sequence in THD format dataset

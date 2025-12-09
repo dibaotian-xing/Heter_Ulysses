@@ -48,7 +48,6 @@ TRAINING_ARGS=(
     --use-mcore-models
     --micro-batch-size 1 
     --global-batch-size 256 
-    --train-iters 1 
     --weight-decay 0.1 
     --adam-beta1 0.9 
     --adam-beta2 0.95 

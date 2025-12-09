@@ -1198,6 +1198,10 @@ def validate_args(args, defaults={}):
             args.recompute_granularity != 'full'
         ), 'recompute_granularity must not be full when CUDA Graphs are enabled.'
 
+    if args.profile_heter_ulysses:
+        assert args.gpu_type_id is not None and args.heter_ulysses_model_name is not None, \
+            "--gpu-type-id and --heter-ulysses-model-name should be set when profiling heter ulysses!"
+
     # Print arguments.
     _print_args("arguments", args)
 
@@ -2097,6 +2101,12 @@ def _add_training_args(parser):
                              'global batch, versus the default behavior of assuming all tokens are non-padded.'))
     group.add_argument('--train-sync-interval', type=int, default=None,
                        help='Training CPU-GPU synchronization interval, to ensure that CPU is not running too far ahead of GPU.')
+    group.add_argument('--profile-heter-ulysses', action='store_true',
+                       help='Enable heterogeneous ulysses profiling. ')
+    group.add_argument('--gpu-type-id', type=int, default=None,
+                       help='The gpu type index of current gpu rank. Used in heter ulysses profiling.')
+    group.add_argument('--heter-ulysses-model-name', type=str, default=None,
+                       help='the model name in heter ulysses profiling.')
 
     # deprecated
     group.add_argument('--checkpoint-activations', action='store_true',

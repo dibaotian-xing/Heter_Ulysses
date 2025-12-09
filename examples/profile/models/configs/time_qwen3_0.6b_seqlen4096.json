@@ -1,0 +1,22 @@
+{
+    "attn_time_gpu_type0_gqa_group8_iter0_bsz4": 6.561994552612305,
+    "attn_time_gpu_type0_gqa_group8_iter1_bsz4": 2.434253692626953,
+    "attn_time_gpu_type0_gqa_group8_iter2_bsz4": 2.5725364685058594,
+    "attn_time_gpu_type0_gqa_group8_iter3_bsz4": 2.4933815002441406,
+    "attn_time_gpu_type0_gqa_group8_iter4_bsz4": 4.001855850219727,
+    "attn_time_gpu_type0_gqa_group12_iter0_bsz4": 7.824420928955078,
+    "attn_time_gpu_type0_gqa_group12_iter1_bsz4": 3.6165714263916016,
+    "attn_time_gpu_type0_gqa_group12_iter2_bsz4": 3.6559104919433594,
+    "attn_time_gpu_type0_gqa_group12_iter3_bsz4": 3.643512725830078,
+    "attn_time_gpu_type0_gqa_group12_iter4_bsz4": 3.6683082580566406,
+    "attn_time_gpu_type1_gqa_group8_iter0_bsz4": 6.61158561706543,
+    "attn_time_gpu_type1_gqa_group8_iter1_bsz4": 2.513408660888672,
+    "attn_time_gpu_type1_gqa_group8_iter2_bsz4": 2.532482147216797,
+    "attn_time_gpu_type1_gqa_group8_iter3_bsz4": 2.584218978881836,
+    "attn_time_gpu_type1_gqa_group8_iter4_bsz4": 2.468585968017578,
+    "attn_time_gpu_type1_gqa_group12_iter0_bsz4": 8.995771408081055,
+    "attn_time_gpu_type1_gqa_group12_iter1_bsz4": 3.6497116088867188,
+    "attn_time_gpu_type1_gqa_group12_iter2_bsz4": 3.6301612854003906,
+    "attn_time_gpu_type1_gqa_group12_iter3_bsz4": 3.6458969116210938,
+    "attn_time_gpu_type1_gqa_group12_iter4_bsz4": 3.620147705078125
+}

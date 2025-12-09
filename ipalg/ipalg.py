@@ -120,7 +120,7 @@ class IPAlg:
         self.model.addConstr(compute_time_max == gp.max_(compute_times.tolist()))
 
         tot_time = self.model.addVar(vtype=GRB.CONTINUOUS)
-        self.model.addConstr(tot_time == all2all_time_max + compute_time_max * 3)
+        self.model.addConstr(tot_time == all2all_time_max + compute_time_max * 3.5)
         self.model.setObjective(tot_time, GRB.MINIMIZE)
         self.model.optimize()
 
@@ -136,60 +136,60 @@ class IPAlg:
         return tot_time.X, seqlens.X, num_gqa_groups.X
 
 
-num_gpu_type = 2
-#suppose gpu type1 ranks 0-3, type2 ranks 4-7
-gpu_nums = np.array([4, 4])
-sl_tot = 2048
-hn_tot = 32
-comm_e = 0.012351302083333333 / 1024 / 1024
-time_a_tmp = 0.278662 / 8
-time_a = np.array([time_a_tmp, time_a_tmp * 1.2])
-time_o_tmp = (1.6565558314323425 - time_a_tmp * hn_tot) / sl_tot
-time_l = np.array([time_o_tmp, time_o_tmp * 1.2])
-hd = 128
-bsz = 1
-nt = 32
-# softmax fp32 others fp16, QK^T, softmax(QK^T), softmax(QK^T)V
-mem_a = 2 * (sl_tot * sl_tot * (2 + 4)) + sl_tot * hd * 2
-mem_l = int((636.015625 * 1024 * 1024 - mem_a * hn_tot) / sl_tot + 0.5)
-mem_e = int(84.0595703125 * 1024 * 1024 / 1024 + 0.5)
-M_tmp = int((32 - 7 * 16 * (1 / 8 + 0.003)) * 1024 * 1024 * 1024) 
-M = np.array([M_tmp, M_tmp])
-print(M)
-precision = 'fp16'
+# num_gpu_type = 2
+# #suppose gpu type1 ranks 0-3, type2 ranks 4-7
+# gpu_nums = np.array([4, 4])
+# sl_tot = 2048
+# hn_tot = 32
+# comm_e = 0.012351302083333333 / 1024 / 1024
+# time_a_tmp = 0.278662 / 8
+# time_a = np.array([time_a_tmp, time_a_tmp * 1.2])
+# time_o_tmp = (1.6565558314323425 - time_a_tmp * hn_tot) / sl_tot
+# time_l = np.array([time_o_tmp, time_o_tmp * 1.2])
+# hd = 128
+# bsz = 1
+# nt = 32
+# # softmax fp32 others fp16, QK^T, softmax(QK^T), softmax(QK^T)V
+# mem_a = 2 * (sl_tot * sl_tot * (2 + 4)) + sl_tot * hd * 2
+# mem_l = int((636.015625 * 1024 * 1024 - mem_a * hn_tot) / sl_tot + 0.5)
+# mem_e = int(84.0595703125 * 1024 * 1024 / 1024 + 0.5)
+# M_tmp = int((32 - 7 * 16 * (1 / 8 + 0.003)) * 1024 * 1024 * 1024) 
+# M = np.array([M_tmp, M_tmp])
+# print(M)
+# precision = 'fp16'
 
-ipalg = IPAlg(
-            num_gpu_type,
-            gpu_nums,
-            sl_tot,
-            hn_tot,
-            comm_e,
-            time_a,
-            time_l,
-            mem_a,
-            mem_l,
-            mem_e,
-            M,
-            bsz,
-            hd,
-            nt,
-            precision
-        )
+# ipalg = IPAlg(
+#             num_gpu_type,
+#             gpu_nums,
+#             sl_tot,
+#             hn_tot,
+#             comm_e,
+#             time_a,
+#             time_l,
+#             mem_a,
+#             mem_l,
+#             mem_e,
+#             M,
+#             bsz,
+#             hd,
+#             nt,
+#             precision
+#         )
 
-opt_tot_time, opt_seqlens, opt_headnums = ipalg.fit()
-print('optimized total time:', opt_tot_time)
-print('optimized sequence lengths:', opt_seqlens)
-print('optimized head nums:', opt_headnums)
+# opt_tot_time, opt_seqlens, opt_headnums = ipalg.fit()
+# print('optimized total time:', opt_tot_time)
+# print('optimized sequence lengths:', opt_seqlens)
+# print('optimized head nums:', opt_headnums)
 
-result = {}
-result['num_gpu_type'] = num_gpu_type
-result['gpu_nums'] = gpu_nums.tolist()
-opt_seqlens_ex = []
-opt_headnums_ex = []
-for i in range(len(opt_seqlens)):
-    opt_seqlens_ex += [int(opt_seqlens[i])] * gpu_nums[i]
-    opt_headnums_ex += [int(opt_headnums[i])] * gpu_nums[i]
-result['seq_lens'] = opt_seqlens_ex
-result['headnums'] = opt_headnums_ex
-with open("examples/qwen/config/test.json", "w", encoding="utf-8") as f:
-    json.dump(result, f, indent=4)
+# result = {}
+# result['num_gpu_type'] = num_gpu_type
+# result['gpu_nums'] = gpu_nums.tolist()
+# opt_seqlens_ex = []
+# opt_headnums_ex = []
+# for i in range(len(opt_seqlens)):
+#     opt_seqlens_ex += [int(opt_seqlens[i])] * gpu_nums[i]
+#     opt_headnums_ex += [int(opt_headnums[i])] * gpu_nums[i]
+# result['seq_lens'] = opt_seqlens_ex
+# result['headnums'] = opt_headnums_ex
+# with open("examples/qwen/config/test.json", "w", encoding="utf-8") as f:
+#     json.dump(result, f, indent=4)
