@@ -114,13 +114,15 @@ class IPAlg:
         compute_times = self.model.addMVar((self.num_gpu_type), vtype=GRB.CONTINUOUS)
         for i in range(self.num_gpu_type):
             self.model.addConstr(
-                compute_times[i] == self.bsz * (self.time_g[i] * num_gqa_groups[i] + self.time_l[i] * seqlens[i])
+                compute_times[i] == self.bsz * (
+                    3.5 * self.time_g[i] * num_gqa_groups[i] + 3 * self.time_l[i] * seqlens[i]
+                )
             )
         compute_time_max = self.model.addVar(vtype=GRB.CONTINUOUS)
         self.model.addConstr(compute_time_max == gp.max_(compute_times.tolist()))
 
         tot_time = self.model.addVar(vtype=GRB.CONTINUOUS)
-        self.model.addConstr(tot_time == all2all_time_max + compute_time_max * 3.5)
+        self.model.addConstr(tot_time == all2all_time_max + compute_time_max)
         self.model.setObjective(tot_time, GRB.MINIMIZE)
         self.model.optimize()
 
