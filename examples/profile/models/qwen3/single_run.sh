@@ -3,6 +3,7 @@ set -e
 set -x
 
 #should accept gpu_type_id, gpu_rank, hidden_size, num_attn_heads, num_gqa_groups
+
 export CUDA_VISIBLE_DEVICES=$2
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
@@ -71,6 +72,7 @@ EVAL_AND_LOGGING_ARGS=(
 
 PROFILE_HETER_ULYSSES_ARGS=(
     --profile-heter-ulysses
+    --cluster-type $CLUSTER_TYPE
     --gpu-type-id $gpu_type_id
     --heter-ulysses-model-name $model_name
 )

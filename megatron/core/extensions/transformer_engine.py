@@ -989,7 +989,8 @@ class TEDotProductAttention(te.pytorch.DotProductAttention):
 
         if args.profile_heter_ulysses:
             extra_kwargs['seqlen_tot'] = args.seq_length
-            extra_kwargs['profile_heter_ulysses'] = args.profile_heter_ulysses
+            extra_kwargs['heter_ulysses_cluster_type'] = args.cluster_type
+            extra_kwargs['profile_heter_ulysses'] = True
             extra_kwargs['gpu_type_id'] = args.gpu_type_id
             extra_kwargs['heter_ulysses_model_name'] = args.heter_ulysses_model_name
 

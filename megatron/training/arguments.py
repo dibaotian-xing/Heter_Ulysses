@@ -1199,8 +1199,9 @@ def validate_args(args, defaults={}):
         ), 'recompute_granularity must not be full when CUDA Graphs are enabled.'
 
     if args.profile_heter_ulysses:
-        assert args.gpu_type_id is not None and args.heter_ulysses_model_name is not None, \
-            "--gpu-type-id and --heter-ulysses-model-name should be set when profiling heter ulysses!"
+        assert args.cluster_type is not None and args.gpu_type_id is not None \
+            and args.heter_ulysses_model_name is not None, \
+            "--cluster-type, --gpu-type-id and --heter-ulysses-model-name should be set when profiling heter ulysses!"
 
     # Print arguments.
     _print_args("arguments", args)
@@ -2102,7 +2103,9 @@ def _add_training_args(parser):
     group.add_argument('--train-sync-interval', type=int, default=None,
                        help='Training CPU-GPU synchronization interval, to ensure that CPU is not running too far ahead of GPU.')
     group.add_argument('--profile-heter-ulysses', action='store_true',
-                       help='Enable heterogeneous ulysses profiling. ')
+                       help='Enable heterogeneous ulysses profiling.')
+    group.add_argument('--cluster-type', type=str, default=None,
+                       help='the cluster type in heter ulysses.')
     group.add_argument('--gpu-type-id', type=int, default=None,
                        help='The gpu type index of current gpu rank. Used in heter ulysses profiling.')
     group.add_argument('--heter-ulysses-model-name', type=str, default=None,

@@ -133,7 +133,7 @@ from . import ft_integration
 stimer = StragglerDetector()
 
 from megatron.core.msc_utils import MultiStorageClientFeature, open_file
-from ipalg.utils import write_json_config
+from ipalg.utils import read_json_config, write_json_config
 
 
 def destroy_global_state():
@@ -2224,12 +2224,15 @@ def train(
         # For GRPO, we keep the data for a few epochs. DeepSeekMath paper calls this number $\mu$.
         # It is similar to a PPO epoch.
 
-        if args.profile_heter_ulysses and iteration==5:
-            profile_time_dict = model[0].module.module.decoder.layers[0].self_attention.core_attention.hu_config_dict
-            profile_time_path = \
+        if args.profile_heter_ulysses and iteration==60:
+            profile_attn_time_dict = model[0].module.module.decoder.layers[0].self_attention.core_attention.hu_config_dict
+            profile_attn_time_path = \
                 model[0].module.module.decoder.layers[0].self_attention.core_attention.heter_ulysses_config_path
-            write_json_config(profile_time_dict, profile_time_path)
-            print(f'Write heter ulysses time profiling result to {profile_time_path}')
+            heter_ulysses_config_dict = read_json_config(profile_attn_time_path) \
+                if os.path.exists(profile_attn_time_path) else {}
+            heter_ulysses_config_dict.update(profile_attn_time_dict)
+            write_json_config(heter_ulysses_config_dict, profile_attn_time_path)
+            print(f'Write heter ulysses attn time profiling result to {profile_attn_time_path}')
             sys.exit(0)
 
         if getattr(args, 'perform_rl_step', False):

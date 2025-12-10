@@ -1,5 +1,6 @@
 # Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 
+import os
 import logging
 import warnings
 from abc import ABC
@@ -31,6 +32,7 @@ from megatron.core.utils import (
     nvtx_range_pop,
     nvtx_range_push,
 )
+from ipalg.utils import read_json_config, write_json_config
 
 logger = logging.getLogger(__name__)
 
@@ -461,8 +463,30 @@ class TransformerLayer(MegatronModule, BaseTransformerLayer):
         # this is only used to uniquely identify decode and non-decode cuda graph
         # runners in the cuda graph manager
         kwargs.pop("dynamic_inference_decode_only", None)
+        from megatron.training import get_args
+        megatron_global_args = get_args()
+        if megatron_global_args.profile_heter_ulysses:
+            import time
+            torch.cuda.synchronize()
+            start_time = time.time()
         hidden_states, context = self._forward_attention(*args, **kwargs)
         output = self._forward_mlp(hidden_states, kwargs.get("inference_context", None))
+        if megatron_global_args.profile_heter_ulysses:
+            torch.cuda.synchronize()
+            time_interval = (time.time() - start_time) * 1000
+            heter_ulysses_config_path = f"examples/profile/models/configs/" \
+                                        f"profile_time_{megatron_global_args.heter_ulysses_model_name}" \
+                                        f"_{megatron_global_args.cluster_type}.json"
+            heter_ulysses_config_dict = read_json_config(heter_ulysses_config_path) \
+                if os.path.exists(heter_ulysses_config_path) else {}
+            heter_ulysses_profile_config_key = f'tf_layer_time_gpu_type{megatron_global_args.gpu_type_id}' \
+                                                f'_seqlen{megatron_global_args.seq_length}' \
+                                                f'_gqa_group{megatron_global_args.num_query_groups}' \
+                                                f'_iter{megatron_global_args.curr_iteration}' \
+                                                f'_bsz{megatron_global_args.micro_batch_size}'
+            heter_ulysses_config_dict[heter_ulysses_profile_config_key] = time_interval
+            write_json_config(heter_ulysses_config_dict, heter_ulysses_config_path)
+
         return output, context
 
     def _forward_attention(
