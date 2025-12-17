@@ -463,14 +463,20 @@ class TransformerLayer(MegatronModule, BaseTransformerLayer):
         # this is only used to uniquely identify decode and non-decode cuda graph
         # runners in the cuda graph manager
         kwargs.pop("dynamic_inference_decode_only", None)
+        
         from megatron.training import get_args
         megatron_global_args = get_args()
         if megatron_global_args.profile_heter_ulysses:
             import time
             torch.cuda.synchronize()
             start_time = time.time()
+
+            from ipalg.utils import profile_memory
+            profile_memory(megatron_global_args, "Before Transformer Layer")
+        
         hidden_states, context = self._forward_attention(*args, **kwargs)
         output = self._forward_mlp(hidden_states, kwargs.get("inference_context", None))
+        
         if megatron_global_args.profile_heter_ulysses:
             torch.cuda.synchronize()
             time_interval = (time.time() - start_time) * 1000
@@ -486,6 +492,9 @@ class TransformerLayer(MegatronModule, BaseTransformerLayer):
                                                 f'_bsz{megatron_global_args.micro_batch_size}'
             heter_ulysses_config_dict[heter_ulysses_profile_config_key] = time_interval
             write_json_config(heter_ulysses_config_dict, heter_ulysses_config_path)
+
+            from ipalg.utils import profile_memory
+            profile_memory(megatron_global_args, "After Transformer Layer")
 
         return output, context
 

@@ -2105,7 +2105,7 @@ def _add_training_args(parser):
     group.add_argument('--profile-heter-ulysses', action='store_true',
                        help='Enable heterogeneous ulysses profiling.')
     group.add_argument('--cluster-type', type=str, default=None,
-                       help='the cluster type in heter ulysses.')
+                       help='the cluster type in heter ulysses. Used in heter ulysses profiling.')
     group.add_argument('--gpu-type-id', type=int, default=None,
                        help='The gpu type index of current gpu rank. Used in heter ulysses profiling.')
     group.add_argument('--heter-ulysses-model-name', type=str, default=None,

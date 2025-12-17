@@ -26,14 +26,14 @@ from ipalg.utils import read_json_config, write_json_config
 
 def get_attn_time_per_gqa_group(config_dict, gqa_group_less, gqa_group_more, seqlen, gpu_type_id, bsz):
     sum_less, sum_more = 0, 0
-    for iter in range(10, 60):
+    for iter in range(10, 20):
         key_less = f"attn_time_gpu_type{gpu_type_id}_seqlen{seqlen}_gqa_group{gqa_group_less}_iter{iter}_bsz{bsz}"
         key_more = f"attn_time_gpu_type{gpu_type_id}_seqlen{seqlen}_gqa_group{gqa_group_more}_iter{iter}_bsz{bsz}"
         sum_less += config_dict[key_less]
         sum_more += config_dict[key_more]
     
-    mean_less_per_sample = sum_less / (50 * bsz)
-    mean_more_per_sample = sum_more / (50 * bsz)
+    mean_less_per_sample = sum_less / (10 * bsz)
+    mean_more_per_sample = sum_more / (10 * bsz)
 
     return (mean_more_per_sample - mean_less_per_sample)/(gqa_group_more - gqa_group_less)
 
@@ -43,14 +43,14 @@ def get_other_time_per_token(
     attn_time_per_gqa_group_seqlen_less, attn_time_per_gqa_group_seqlen_more,
 ):
     sum_less, sum_more = 0, 0
-    for iter in range(10, 60):
+    for iter in range(10, 20):
         key_less = f"tf_layer_time_gpu_type{gpu_type_id}_seqlen{seqlen_less}_gqa_group{gqa_group}_iter{iter}_bsz{bsz}"
         key_more = f"tf_layer_time_gpu_type{gpu_type_id}_seqlen{seqlen_more}_gqa_group{gqa_group}_iter{iter}_bsz{bsz}"
         sum_less += config_dict[key_less]
         sum_more += config_dict[key_more]
     
-    mean_less_per_sample = sum_less / (50 * bsz)
-    mean_more_per_sample = sum_more / (50 * bsz)
+    mean_less_per_sample = sum_less / (10 * bsz)
+    mean_more_per_sample = sum_more / (10 * bsz)
 
     other_time_seqlen_less = mean_less_per_sample - attn_time_per_gqa_group_seqlen_less * gqa_group
     other_time_seqlen_more = mean_more_per_sample - attn_time_per_gqa_group_seqlen_more * gqa_group
@@ -59,7 +59,66 @@ def get_other_time_per_token(
     return (other_time_seqlen_more - other_time_seqlen_less)/(seqlen_more - seqlen_less)
 
 
-def post_process(args):
+def get_attn_act_per_gqa_group(config_dict, gqa_group_less, gqa_group_more, seqlen, bsz):
+    sum_less, sum_more = 0, 0
+    for iter in range(10, 20):
+        key_before_less = f"iter{iter} seqlen{seqlen}_gqa_group{gqa_group_less}_bsz{bsz} Before CoreAttention"
+        key_after_less = f"iter{iter} seqlen{seqlen}_gqa_group{gqa_group_less}_bsz{bsz} After CoreAttention"
+        sum_less += config_dict[key_after_less] - config_dict[key_before_less]
+        key_before_more = f"iter{iter} seqlen{seqlen}_gqa_group{gqa_group_more}_bsz{bsz} Before CoreAttention"
+        key_after_more = f"iter{iter} seqlen{seqlen}_gqa_group{gqa_group_more}_bsz{bsz} After CoreAttention"
+        sum_more += config_dict[key_after_more] - config_dict[key_before_more]
+    
+    mean_less_per_sample = sum_less / (10 * bsz)
+    mean_more_per_sample = sum_more / (10 * bsz)
+    return (mean_more_per_sample - mean_less_per_sample)/(gqa_group_more - gqa_group_less)
+
+
+def get_tf_layer_other_act_per_token(
+    config_dict, gqa_group, seqlen_less, seqlen_more, bsz,
+    attn_act_per_gqa_group_seqlen_less, attn_act_per_gqa_group_seqlen_more,
+):
+    sum_less, sum_more = 0, 0
+    for iter in range(10, 20):
+        key_before_less = f"iter{iter} seqlen{seqlen_less}_gqa_group{gqa_group}_bsz{bsz} Before Transformer Layer"
+        key_after_less = f"iter{iter} seqlen{seqlen_less}_gqa_group{gqa_group}_bsz{bsz} After Transformer Layer"        
+        sum_less += config_dict[key_after_less] - config_dict[key_before_less]
+        key_before_more = f"iter{iter} seqlen{seqlen_more}_gqa_group{gqa_group}_bsz{bsz} Before Transformer Layer"
+        key_after_more = f"iter{iter} seqlen{seqlen_more}_gqa_group{gqa_group}_bsz{bsz} After Transformer Layer"        
+        sum_more += config_dict[key_after_more] - config_dict[key_before_more]
+
+    mean_less_per_sample = sum_less / (10 * bsz)
+    mean_more_per_sample = sum_more / (10 * bsz)
+
+    other_act_seqlen_less = mean_less_per_sample - attn_act_per_gqa_group_seqlen_less * gqa_group
+    other_act_seqlen_more = mean_more_per_sample - attn_act_per_gqa_group_seqlen_more * gqa_group
+
+    return (other_act_seqlen_more - other_act_seqlen_less)/(seqlen_more - seqlen_less)
+
+
+def get_other_layer_act_per_token(config_dict, gqa_group, seqlen_less, seqlen_more, bsz):
+    sum_less, sum_more = 0, 0
+    for iter in range(10, 20):
+        key_before_less = f"iter{iter} seqlen{seqlen_less}_gqa_group{gqa_group}_bsz{bsz} Before Forward"
+        key_before_tf_less = f"iter{iter} seqlen{seqlen_less}_gqa_group{gqa_group}_bsz{bsz} Before Transformer Layer"
+        key_after_tf_less = f"iter{iter} seqlen{seqlen_less}_gqa_group{gqa_group}_bsz{bsz} After Transformer Layer"        
+        key_after_less = f"iter{iter} seqlen{seqlen_less}_gqa_group{gqa_group}_bsz{bsz} After Forward"
+        sum_less += (config_dict[key_after_less] - config_dict[key_before_less]) - \
+            (config_dict[key_after_tf_less] - config_dict[key_before_tf_less])
+        
+        key_before_more = f"iter{iter} seqlen{seqlen_more}_gqa_group{gqa_group}_bsz{bsz} Before Forward"
+        key_before_tf_more = f"iter{iter} seqlen{seqlen_more}_gqa_group{gqa_group}_bsz{bsz} Before Transformer Layer"
+        key_after_tf_more = f"iter{iter} seqlen{seqlen_more}_gqa_group{gqa_group}_bsz{bsz} After Transformer Layer"        
+        key_after_more = f"iter{iter} seqlen{seqlen_more}_gqa_group{gqa_group}_bsz{bsz} After Forward"
+        sum_more += (config_dict[key_after_more] - config_dict[key_before_more]) - \
+            (config_dict[key_after_tf_more] - config_dict[key_before_tf_more])
+        
+    mean_less_per_sample = sum_less / (10 * bsz)
+    mean_more_per_sample = sum_more / (10 * bsz)
+    return (mean_more_per_sample - mean_less_per_sample)/(seqlen_more - seqlen_less)
+
+
+def time_config_post_process(args):
     config_path = f'examples/profile/models/configs/profile_time_{args.model_name}_{args.cluster_type}.json'
     assert os.path.exists(config_path), f"config path {config_path} doesn't exist!"
     config_dict = read_json_config(config_path)
@@ -68,27 +127,53 @@ def post_process(args):
         # attn time for less seqlen
         attn_time_per_gqa_group_seqlen_less = get_attn_time_per_gqa_group(
             config_dict, args.num_query_groups, args.num_query_groups + args.num_query_groups_diff,
-            args.seq_length, gpu_type_id, args.batch_size
+            args.seq_length - args.seq_length_diff, gpu_type_id, args.batch_size
         )
         attn_time_seqlen_less_list.append(attn_time_per_gqa_group_seqlen_less)
         
         # attn time for more seqlen
         attn_time_per_gqa_group_seqlen_more = get_attn_time_per_gqa_group(
             config_dict, args.num_query_groups, args.num_query_groups + args.num_query_groups_diff,
-            args.seq_length + args.seq_length_diff, gpu_type_id, args.batch_size
+            args.seq_length, gpu_type_id, args.batch_size
         )
         attn_time_seqlen_more_list.append(attn_time_per_gqa_group_seqlen_more)
 
         # other time for less gqa group
         other_time_per_token = get_other_time_per_token(
-            config_dict, args.num_query_groups, args.seq_length, args.seq_length + args.seq_length_diff,
+            config_dict, args.num_query_groups, args.seq_length - args.seq_length_diff, args.seq_length,
             gpu_type_id, args.batch_size, attn_time_per_gqa_group_seqlen_less, attn_time_per_gqa_group_seqlen_more
         )
         other_time_list.append(other_time_per_token)
 
-    config_dict[f"attn_time_per_gqa_group_seqlen{args.seq_length}"] = attn_time_seqlen_less_list
-    config_dict[f"attn_time_per_gqa_group_seqlen{args.seq_length + args.seq_length_diff}"] = attn_time_seqlen_more_list
-    config_dict[f"other_time_per_token"] = other_time_list
+    config_dict[f"attn_time_per_gqa_group_seqlen{args.seq_length - args.seq_length_diff}"] = attn_time_seqlen_less_list
+    config_dict[f"attn_time_per_gqa_group_seqlen{args.seq_length}"] = attn_time_seqlen_more_list
+    config_dict["other_time_per_token"] = other_time_list
+    write_json_config(config_dict, config_path)
+
+
+def mem_config_post_process(args):
+    config_path = f'examples/profile/models/configs/profile_memory_{args.model_name}.json'
+    assert os.path.exists(config_path), f"config path {config_path} doesn't exist!"
+    config_dict = read_json_config(config_path)
+    attn_mem_less_seqlen = get_attn_act_per_gqa_group(
+        config_dict, args.num_query_groups, args.num_query_groups + args.num_query_groups_diff, 
+        args.seq_length - args.seq_length_diff, args.batch_size
+    )
+    config_dict[f"attn_act_mem_per_gqa_group_seqlen{args.seq_length - args.seq_length_diff}"] = attn_mem_less_seqlen
+    attn_mem_more_seqlen = get_attn_act_per_gqa_group(
+        config_dict, args.num_query_groups, args.num_query_groups + args.num_query_groups_diff, 
+        args.seq_length, args.batch_size
+    )
+    config_dict[f"attn_act_mem_per_gqa_group_seqlen{args.seq_length}"] = attn_mem_more_seqlen
+    tf_layer_other_mem_per_token = get_tf_layer_other_act_per_token(
+        config_dict, args.num_query_groups, args.seq_length - args.seq_length_diff, args.seq_length,
+        args.batch_size, attn_mem_less_seqlen, attn_mem_more_seqlen
+    )
+    config_dict["tf_layer_other_act_mem_per_token"] = tf_layer_other_mem_per_token
+    other_layer_mem_per_token = get_other_layer_act_per_token(
+        config_dict, args.num_query_groups, args.seq_length - args.seq_length_diff, args.seq_length, args.batch_size
+    )
+    config_dict["other_layer_act_mem_per_token"] = other_layer_mem_per_token
     write_json_config(config_dict, config_path)
 
 
@@ -107,4 +192,5 @@ if __name__ == "__main__":
     parser.add_argument('--gpu_type_id_list', nargs='+', type=int, default=[],
                        help='List of gpu type indexes in the cluster. Default=[]')
     args = parser.parse_args()
-    post_process(args)
+    time_config_post_process(args)
+    mem_config_post_process(args)

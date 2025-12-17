@@ -3,7 +3,7 @@ set -e
 set -x
 
 # profile attn time for different gpu types
-function profile_diff_num_gqa_groups_time(){
+function profile_diff_num_gqa_groups(){
     for (( i=0 ; i<${#gpu_type_id[@]} ; i=i+1 ))
     do
       bash $SCRIPT_PATH ${gpu_type_id[i]} ${gpu_type_rank[i]} $hidden_size \

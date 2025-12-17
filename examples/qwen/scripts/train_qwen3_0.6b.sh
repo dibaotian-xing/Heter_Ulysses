@@ -2,7 +2,7 @@
 
 # Runs the Qwen3 0.6B model
 
-export CUDA_VISIBLE_DEVICES=3,4
+export CUDA_VISIBLE_DEVICES=0,1
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 # export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1
 
@@ -46,8 +46,8 @@ GPT_MODEL_ARGS=(
 TRAINING_ARGS=(
     --transformer-impl transformer_engine
     --use-mcore-models
-    --micro-batch-size 1 
-    --global-batch-size 256 
+    --micro-batch-size 2 
+    --global-batch-size 2 
     --weight-decay 0.1 
     --adam-beta1 0.9 
     --adam-beta2 0.95 
@@ -88,12 +88,12 @@ DATA_ARGS=(
 
 EVAL_AND_LOGGING_ARGS=(
     --log-interval 1
-    --save-interval 10000 
+    --save-interval -1
     --eval-interval 1000 
     --save $CHECKPOINT_PATH 
     --load $CHECKPOINT_PATH 
-    --eval-iters 10
-    --train-iters 100
+    --eval-iters 1
+    --train-iters 10
 )
 
 torchrun ${DISTRIBUTED_ARGS[@]} pretrain_gpt.py \
