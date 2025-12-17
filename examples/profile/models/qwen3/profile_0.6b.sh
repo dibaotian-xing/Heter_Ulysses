@@ -27,12 +27,12 @@ export seq_length_diff=2048
 export SCRIPT_PATH='examples/profile/models/qwen3/single_run.sh'
 source examples/profile/profile_diff_settings.sh
 
-# profile_diff_num_gqa_groups
+profile_diff_num_gqa_groups
 export seq_length=$((seq_length-seq_length_diff))
-# profile_diff_num_gqa_groups
+profile_diff_num_gqa_groups
 
 export seq_length=$((seq_length+seq_length_diff))
-python ipalg/post_process_time_profile.py \
+python ipalg/profile_post_process.py \
     --cluster_type $CLUSTER_TYPE \
     --model_name $model_name \
     --seq_length $seq_length \
