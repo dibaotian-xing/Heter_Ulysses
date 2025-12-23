@@ -15,9 +15,9 @@ export profile_bsz=4
 export seq_length=4096
 
 # heterogeneous settings, each gpu type should choose one rank to be profiled
-export CLUSTER_TYPE="a6000x2_id0-1"
+export CLUSTER_TYPE="a6000x2_id12"
 export gpu_type_id=(0 1) # the indexes of gpu types of this node
-export gpu_type_rank=(2 3) # gpu_type_rank[i] should be a rank belongs to gpu_type_id[i]
+export gpu_type_rank=(1 2) # gpu_type_rank[i] should be a rank belongs to gpu_type_id[i]
 
 # for attn time profile
 export num_query_groups_diff=4

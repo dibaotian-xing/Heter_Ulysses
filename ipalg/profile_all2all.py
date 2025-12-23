@@ -54,13 +54,20 @@ def profile(args):
     torch.cuda.set_device(local_rank)
     device = torch.device("cuda", local_rank)
 
-    seqlen_per_rank = 4096
+    seqlen_per_rank = 2048
+    bsz = 2
+    headnum = 8
 
-    all2all_tensor = torch.randn((world_size, seqlen_per_rank, 8, 32, 128), device=device, dtype=torch.float32)
+    all2all_tensor = torch.randn(
+        (world_size, seqlen_per_rank, bsz, headnum // world_size, 128), 
+        device=device, 
+        dtype=torch.float32
+    )
 
     warmup_iters, iters = 1, 10
     all2all_stream = torch.cuda.Stream()
-    a2a_message_size = 2 * (world_size - 1) / world_size * seqlen_per_rank * 8 * 32 * 128 * 4 * iters / 1024 / 1024
+    a2a_message_size = 2 * (world_size - 1) / \
+        world_size * seqlen_per_rank * bsz * (headnum // world_size) * 128 * 4 * iters / 1024 / 1024
 
     cluster_type = args.cluster_type
 

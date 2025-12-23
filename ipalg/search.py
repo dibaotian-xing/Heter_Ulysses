@@ -53,9 +53,14 @@ def search(args):
     mem_l = profile_mem_dict["tf_layer_other_act_mem_per_token"]
     mem_e = profile_mem_dict["other_layer_act_mem_per_token"]
     model_states_size = args.model_parameter_size * 16
-    M = np.array(args.gpu_type_mem_capacity_list) - model_states_size
+    M = (np.array(args.gpu_type_mem_capacity_list) - model_states_size) * 1024
     precision = args.precision
 
+    print(
+        f"{num_gpu_type=}, {gpu_nums=}, {sl_tot=}, {gn_tot=}, {a2a_comm_e=}, " \
+        f"{time_g=}, {time_l=}, {mem_g=}, {mem_l=}, {mem_e=}, {M=}, {bsz=}, {hd=}, {nt=} " \
+        f"{nq=}, {precision=}"
+    )
     ipalg = IPAlg(
                 num_gpu_type,
                 gpu_nums,

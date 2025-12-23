@@ -1,0 +1,15 @@
+{
+    "num_gpu_type": 2,
+    "gpu_nums": [
+        1,
+        1
+    ],
+    "seq_lens": [
+        1,
+        4095
+    ],
+    "headnums": [
+        1,
+        7
+    ]
+}

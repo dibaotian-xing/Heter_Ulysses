@@ -18,20 +18,18 @@
 import math
 
 import gurobipy as gp
-import numpy as np
 from gurobipy import GRB
-import json
 
 
 class IPAlg:
-    """Integer programming algorithm
+    """Integer programming algorithm, use MB for memory unit, use ms for time unit.
     
     Args:
         num_gpu_type(int): number of gpu types
         gpu_nums(np.ndarray): gpu numbers of per gpu type
         sl_tot(int): the seqlen of the whole training process
         gn_tot(int): number of GQA groups of the whole training process
-        comm_e(float): the communication coefficient between different gpus
+        comm_e(float): the communication coefficient between different gpus, use ms/B as unit.
         time_g(np.ndarray): time to compute forward propagation of a single GQA group of attention 
                     for the whole sequence per gpu type
         time_l(np.ndarray): time of per gpu type to compute forward propagation of the whole transformer layer 
@@ -126,6 +124,11 @@ class IPAlg:
         self.model.setObjective(tot_time, GRB.MINIMIZE)
         self.model.optimize()
 
+        print(f"type0 comm time: {self.hd * self.bsz * self.c_type * self.comm_e * (5 * self.nq + 4) * \
+                    (4 * self.sl_tot + 2048 * self.gn_tot - 2 * 4 * 2048)}")
+        print(f"type0 comp time: {self.bsz * (3.5 * 0.06759167 * 4 + 3 * 0.00043266 * 2048)}")
+        print(f"type1 comp time: {self.bsz * (3.5 * 0.07023066 * 4 + 3 * 0.00035969 * 2048)}")
+        print(f"{compute_times.X=}")
         if self.model.Status == GRB.Status.INFEASIBLE:
             print("No solution for current batch size and current memory limit.")
             return math.inf, None, None
