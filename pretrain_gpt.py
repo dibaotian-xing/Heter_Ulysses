@@ -153,6 +153,10 @@ def forward_step(data_iterator, model: GPTModel, return_schedule_plan: bool = Fa
                     tokens, position_ids, attention_mask, labels=labels, loss_mask=loss_mask
                 )
 
+    if args.profile_heter_ulysses:
+        from ipalg.utils import profile_memory
+        profile_memory(args, "After Forward")
+
     # [ModelOpt]: model is needed to access ModelOpt distillation losses
     return output_tensor, partial(loss_func, loss_mask, model=model)
 
