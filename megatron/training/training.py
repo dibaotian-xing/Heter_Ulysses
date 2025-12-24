@@ -2224,7 +2224,7 @@ def train(
         # For GRPO, we keep the data for a few epochs. DeepSeekMath paper calls this number $\mu$.
         # It is similar to a PPO epoch.
 
-        if args.profile_heter_ulysses and iteration==60:
+        if args.profile_heter_ulysses and iteration==20:
             profile_attn_time_dict = model[0].module.module.decoder.layers[0].self_attention.core_attention.hu_config_dict
             profile_attn_time_path = \
                 model[0].module.module.decoder.layers[0].self_attention.core_attention.heter_ulysses_config_path

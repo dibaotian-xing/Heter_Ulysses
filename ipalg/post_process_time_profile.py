@@ -26,14 +26,14 @@ from ipalg.utils import read_json_config, write_json_config
 
 def get_attn_time_per_gqa_group(config_dict, gqa_group_less, gqa_group_more, seqlen, gpu_type_id, bsz):
     sum_less, sum_more = 0, 0
-    for iter in range(10, 60):
+    for iter in range(10, 20):
         key_less = f"attn_time_gpu_type{gpu_type_id}_seqlen{seqlen}_gqa_group{gqa_group_less}_iter{iter}_bsz{bsz}"
         key_more = f"attn_time_gpu_type{gpu_type_id}_seqlen{seqlen}_gqa_group{gqa_group_more}_iter{iter}_bsz{bsz}"
         sum_less += config_dict[key_less]
         sum_more += config_dict[key_more]
     
-    mean_less_per_sample = sum_less / (50 * bsz)
-    mean_more_per_sample = sum_more / (50 * bsz)
+    mean_less_per_sample = sum_less / (10 * bsz)
+    mean_more_per_sample = sum_more / (10 * bsz)
 
     return (mean_more_per_sample - mean_less_per_sample)/(gqa_group_more - gqa_group_less)
 
@@ -43,14 +43,14 @@ def get_other_time_per_token(
     attn_time_per_gqa_group_seqlen_less, attn_time_per_gqa_group_seqlen_more,
 ):
     sum_less, sum_more = 0, 0
-    for iter in range(10, 60):
+    for iter in range(10, 20):
         key_less = f"tf_layer_time_gpu_type{gpu_type_id}_seqlen{seqlen_less}_gqa_group{gqa_group}_iter{iter}_bsz{bsz}"
         key_more = f"tf_layer_time_gpu_type{gpu_type_id}_seqlen{seqlen_more}_gqa_group{gqa_group}_iter{iter}_bsz{bsz}"
         sum_less += config_dict[key_less]
         sum_more += config_dict[key_more]
     
-    mean_less_per_sample = sum_less / (50 * bsz)
-    mean_more_per_sample = sum_more / (50 * bsz)
+    mean_less_per_sample = sum_less / (10 * bsz)
+    mean_more_per_sample = sum_more / (10 * bsz)
 
     other_time_seqlen_less = mean_less_per_sample - attn_time_per_gqa_group_seqlen_less * gqa_group
     other_time_seqlen_more = mean_more_per_sample - attn_time_per_gqa_group_seqlen_more * gqa_group
@@ -68,26 +68,26 @@ def post_process(args):
         # attn time for less seqlen
         attn_time_per_gqa_group_seqlen_less = get_attn_time_per_gqa_group(
             config_dict, args.num_query_groups, args.num_query_groups + args.num_query_groups_diff,
-            args.seq_length, gpu_type_id, args.batch_size
+            args.seq_length - args.seq_length_diff, gpu_type_id, args.batch_size
         )
         attn_time_seqlen_less_list.append(attn_time_per_gqa_group_seqlen_less)
         
         # attn time for more seqlen
         attn_time_per_gqa_group_seqlen_more = get_attn_time_per_gqa_group(
             config_dict, args.num_query_groups, args.num_query_groups + args.num_query_groups_diff,
-            args.seq_length + args.seq_length_diff, gpu_type_id, args.batch_size
+            args.seq_length, gpu_type_id, args.batch_size
         )
         attn_time_seqlen_more_list.append(attn_time_per_gqa_group_seqlen_more)
 
         # other time for less gqa group
         other_time_per_token = get_other_time_per_token(
-            config_dict, args.num_query_groups, args.seq_length, args.seq_length + args.seq_length_diff,
+            config_dict, args.num_query_groups, args.seq_length - args.seq_length_diff, args.seq_length,
             gpu_type_id, args.batch_size, attn_time_per_gqa_group_seqlen_less, attn_time_per_gqa_group_seqlen_more
         )
         other_time_list.append(other_time_per_token)
 
-    config_dict[f"attn_time_per_gqa_group_seqlen{args.seq_length}"] = attn_time_seqlen_less_list
-    config_dict[f"attn_time_per_gqa_group_seqlen{args.seq_length + args.seq_length_diff}"] = attn_time_seqlen_more_list
+    config_dict[f"attn_time_per_gqa_group_seqlen{args.seq_length - args.seq_length_diff}"] = attn_time_seqlen_less_list
+    config_dict[f"attn_time_per_gqa_group_seqlen{args.seq_length}"] = attn_time_seqlen_more_list
     config_dict[f"other_time_per_token"] = other_time_list
     write_json_config(config_dict, config_path)
 

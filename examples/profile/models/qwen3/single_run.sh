@@ -10,7 +10,7 @@ export CUDA_DEVICE_MAX_CONNECTIONS=1
 gpu_type_id=$1
 
 DATA_PATH=/home/lijie/data/gpt2_small_document/my-gpt2-small_text_document
-TOKENIZER_MODEL_PATH=/data/ssd/lijie/Qwen3-0.6B-hf
+TOKENIZER_MODEL_PATH=/home/lijie/Qwen3-0.6B-hf
 
 GPT_MODEL_ARGS=(
     --num-layers 1

@@ -19,7 +19,7 @@ CHECKPOINT_PATH=/data/ssd/lijie/Qwen3-0.6B-mcore #<Specify path>
 # VOCAB_FILE=$3 #<Specify path to file>/gpt2-vocab.json
 # MERGE_FILE=$4 #<Specify path to file>/gpt2-merges.txt
 DATA_PATH=/home/lijie/data/gpt2_small_document/my-gpt2-small_text_document #<Specify path and file prefix>_text_document
-TOKENIZER_MODEL_PATH=/data/ssd/lijie/Qwen3-0.6B-hf
+TOKENIZER_MODEL_PATH=/home/lijie/Qwen3-0.6B-hf
 
 DISTRIBUTED_ARGS=(
     --nproc_per_node $GPUS_PER_NODE 
@@ -47,7 +47,7 @@ TRAINING_ARGS=(
     --transformer-impl transformer_engine
     --use-mcore-models
     --micro-batch-size 1 
-    --global-batch-size 256 
+    --global-batch-size 2 
     --weight-decay 0.1 
     --adam-beta1 0.9 
     --adam-beta2 0.95 
@@ -88,7 +88,7 @@ DATA_ARGS=(
 
 EVAL_AND_LOGGING_ARGS=(
     --log-interval 1
-    --save-interval 10000 
+    --save-interval -1 
     --eval-interval 1000 
     --save $CHECKPOINT_PATH 
     --load $CHECKPOINT_PATH 
