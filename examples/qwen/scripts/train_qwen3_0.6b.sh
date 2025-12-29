@@ -2,7 +2,7 @@
 
 # Runs the Qwen3 0.6B model
 
-export CUDA_VISIBLE_DEVICES=0,1
+export CUDA_VISIBLE_DEVICES=2,3
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 # export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1
 
@@ -88,10 +88,7 @@ DATA_ARGS=(
 
 EVAL_AND_LOGGING_ARGS=(
     --log-interval 1
-    --save-interval 1000
     --eval-interval 1000 
-    --save $CHECKPOINT_PATH 
-    --load $CHECKPOINT_PATH 
     --eval-iters 1
     --train-iters 10
 )
