@@ -56,7 +56,7 @@ def profile(args):
 
     seqlen_per_rank = 2048
     bsz = 2
-    headnum_q = 32
+    headnum_q = 16
     headnum_kv = 8
 
     all2all_tensor_q = torch.randn(
@@ -74,9 +74,9 @@ def profile(args):
     warmup_iters, iters = 1, 10
     all2all_stream = torch.cuda.Stream()
     a2a_message_size_q = 2 * (world_size - 1) / \
-        world_size * seqlen_per_rank * bsz * (headnum_q // world_size) * 128 * 2 * iters / 1024 / 1024
+        world_size * seqlen_per_rank * bsz * headnum_q * 128 * 2 * iters / 1024 / 1024
     a2a_message_size_kv = 2 * (world_size - 1) / \
-        world_size * seqlen_per_rank * bsz * (headnum_kv // world_size) * 128 * 2 * iters / 1024 / 1024
+        world_size * seqlen_per_rank * bsz * headnum_kv * 128 * 2 * iters / 1024 / 1024
     a2a_message_size = a2a_message_size_q + 2 * a2a_message_size_kv
     cluster_type = args.cluster_type
 
@@ -161,23 +161,23 @@ def profile(args):
     if world_size == 1:
         write_profile_result(0, world_size, args)
     
-    # with torch.profiler.profile(
-    #     activities=[torch.profiler.ProfilerActivity.CUDA],
-    #     schedule=torch.profiler.schedule(wait=0, warmup=1, active=1),
-    #     on_trace_ready=trace_handler,
-    # ) as p:
-    # Warming up
-    if rank == 0:
-        print("Warming up...")
-    for _ in range(warmup_iters):
-        all2all_comm(all2all_stream)
-    # p.step()
+    with torch.profiler.profile(
+        activities=[torch.profiler.ProfilerActivity.CUDA],
+        schedule=torch.profiler.schedule(wait=0, warmup=1, active=1),
+        on_trace_ready=trace_handler,
+    ) as p:
+        # Warming up
+        if rank == 0:
+            print("Warming up...")
+        for _ in range(warmup_iters):
+            all2all_comm(all2all_stream)
+        p.step()
 
-    if rank == 0:
-        print("Profiling...")
-    for _ in range(iters):
-        all2all_comm(all2all_stream)
-    # p.step()
+        if rank == 0:
+            print("Profiling...")
+        for _ in range(iters):
+            all2all_comm(all2all_stream)
+        p.step()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
