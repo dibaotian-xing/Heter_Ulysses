@@ -56,27 +56,47 @@ def profile(args):
 
     seqlen_per_rank = 2048
     bsz = 2
-    headnum = 8
+    headnum_q = 16
+    headnum_kv = 8
 
-    all2all_tensor = torch.randn(
-        (world_size, seqlen_per_rank, bsz, headnum // world_size, 128), 
+    all2all_tensor_q = torch.randn(
+        (world_size, seqlen_per_rank, bsz, headnum_q // world_size, 128), 
         device=device, 
-        dtype=torch.float32
+        dtype=torch.float16
+    )
+
+    all2all_tensor_kv = torch.randn(
+        (world_size, seqlen_per_rank, bsz, headnum_kv // world_size, 128), 
+        device=device, 
+        dtype=torch.float16
     )
 
     warmup_iters, iters = 1, 10
     all2all_stream = torch.cuda.Stream()
-    a2a_message_size = 2 * (world_size - 1) / \
-        world_size * seqlen_per_rank * bsz * (headnum // world_size) * 128 * 4 * iters / 1024 / 1024
-
+    a2a_message_size_q = 2 * (world_size - 1) / \
+        world_size * seqlen_per_rank * bsz * headnum_q * 128 * 2 * iters / 1024 / 1024
+    a2a_message_size_kv = 2 * (world_size - 1) / \
+        world_size * seqlen_per_rank * bsz * headnum_kv * 128 * 2 * iters / 1024 / 1024
+    a2a_message_size = a2a_message_size_q + 2 * a2a_message_size_kv
     cluster_type = args.cluster_type
 
-    def all2all_comm():
-        output = torch.empty_like(all2all_tensor)
-        torch.distributed.all_to_all_single(output, all2all_tensor)
+    def all2all_comm(stream):
+        reqs = []
+        output = [torch.empty_like(all2all_tensor_q)] + [torch.empty_like(all2all_tensor_kv)] * 2
+        for i in range(4):
+            if i < 3:
+                reqs.append(torch.distributed.all_to_all_single(
+                    output[i],
+                    all2all_tensor_kv if i != 0 else all2all_tensor_q,
+                    async_op=True
+                ))
+            if i > 0:
+                with torch.cuda.stream(stream):
+                    reqs[i - 1].wait()
+        torch.cuda.current_stream().wait_stream(stream)
 
     #warm
-    x = torch.ones((1), dtype=torch.float32).to(device)
+    x = torch.ones((1), dtype=torch.float16).to(device)
     torch.distributed.all_reduce(x, op=torch.distributed.ReduceOp.SUM)
 
     def trace_handler(prof):
@@ -149,18 +169,14 @@ def profile(args):
         # Warming up
         if rank == 0:
             print("Warming up...")
-        with torch.cuda.stream(all2all_stream):
-            for _ in range(warmup_iters):
-                all2all_comm()
-        torch.cuda.Stream.synchronize(all2all_stream)
+        for _ in range(warmup_iters):
+            all2all_comm(all2all_stream)
         p.step()
 
         if rank == 0:
             print("Profiling...")
-        with torch.cuda.stream(all2all_stream):
-            for _ in range(iters):
-                all2all_comm()
-        torch.cuda.Stream.synchronize(all2all_stream)
+        for _ in range(iters):
+            all2all_comm(all2all_stream)
         p.step()
 
 if __name__ == "__main__":

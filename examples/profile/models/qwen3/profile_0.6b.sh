@@ -22,7 +22,7 @@ export gpu_type_rank=(1 2) # gpu_type_rank[i] should be a rank belongs to gpu_ty
 # for attn time profile
 export num_query_groups_diff=4
 # for tf layer time profile
-export seq_length_diff=2048
+export seq_length_diff=3072
 
 export SCRIPT_PATH='examples/profile/models/qwen3/single_run.sh'
 source examples/profile/profile_diff_settings.sh
