@@ -90,8 +90,8 @@ class IPAlg:
     def _do_fit(self):
         seqlens = self.model.addMVar((self.num_gpu_type), vtype=GRB.INTEGER)
         num_gqa_groups = self.model.addMVar((self.num_gpu_type), vtype=GRB.INTEGER)
-        self.model.addConstr(seqlens >= 1)
-        self.model.addConstr(num_gqa_groups >= 1)
+        self.model.addConstr(seqlens >= 0)
+        self.model.addConstr(num_gqa_groups >= 0)
         self.model.addConstr(self.sl_tot == gp.quicksum(seqlens * self.gpu_nums))
         self.model.addConstr(self.gn_tot == gp.quicksum(num_gqa_groups * self.gpu_nums))
         for i in range(self.num_gpu_type):
@@ -124,10 +124,6 @@ class IPAlg:
         self.model.setObjective(tot_time, GRB.MINIMIZE)
         self.model.optimize()
 
-        print(f"type0 comm time: {self.hd * self.bsz * self.c_type * self.comm_e * (5 * self.nq + 4) * \
-                    (4 * self.sl_tot + 2048 * self.gn_tot - 2 * 4 * 2048)}")
-        print(f"type0 comp time: {self.bsz * (3.5 * 0.06759167 * 4 + 3 * 0.00043266 * 2048)}")
-        print(f"type1 comp time: {self.bsz * (3.5 * 0.07023066 * 4 + 3 * 0.00035969 * 2048)}")
         print(f"{compute_times.X=}")
         if self.model.Status == GRB.Status.INFEASIBLE:
             print("No solution for current batch size and current memory limit.")

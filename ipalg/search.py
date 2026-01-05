@@ -100,6 +100,12 @@ def search(args):
         f"examples/qwen/config/{args.model_name}_{args.cluster_type}_seqlen{args.seq_length}.json"
     )
 
+    if any(opt_headnums == 0) or any(opt_seqlens == 0):
+        print("NOTE!!! There are some zeros in the optimized solution, "
+              "which means that some types of gpus are not necessary for best performance."
+              "You must remove these types of gpus in the gpu_num_list and gpu_capacity_list in the searching script,"
+              "and rerun it to get the right config file.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
