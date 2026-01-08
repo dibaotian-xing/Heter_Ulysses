@@ -1838,7 +1838,7 @@ def get_batch_on_this_cp_rank(batch: Dict[str, Any]):
                     seqlen_splits = args.heter_ulysses_seq_lens.tolist()
                     seq_dim = 1 if key != "attention_mask" else 2
                     val_splits = torch.split(val, seqlen_splits, dim=seq_dim)
-                    val = val_splits[cp_rank]
+                    val = val_splits[cp_rank].contiguous()
                     batch[key] = val
 
     return batch

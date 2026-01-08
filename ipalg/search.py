@@ -28,6 +28,9 @@ from ipalg.utils import read_json_config, write_json_config
 def search(args):
     num_gpu_type = len(args.gpu_type_num_list)
     gpu_nums = np.array(args.gpu_type_num_list)
+
+    pytorch_context_mem = 8192
+
     sl_tot = args.seq_length
     gn_tot = args.num_query_groups
     tot_gpu_num = int(np.sum(gpu_nums))
@@ -52,8 +55,8 @@ def search(args):
     mem_g = profile_mem_dict[attn_act_mem_per_gqa_group_key]
     mem_l = profile_mem_dict["tf_layer_other_act_mem_per_token"]
     mem_e = profile_mem_dict["other_layer_act_mem_per_token"]
-    model_states_size = args.model_parameter_size * 16
-    M = (np.array(args.gpu_type_mem_capacity_list) - model_states_size) * 1024
+    model_states_size = args.model_parameter_size * 18 # fp32 grad accumulation
+    M = (np.array(args.gpu_type_mem_capacity_list) - model_states_size) * 1024 - pytorch_context_mem
     precision = args.precision
 
     print(
@@ -94,7 +97,7 @@ def search(args):
         opt_seqlens_ex += [int(opt_seqlens[i])] * gpu_nums[i]
         opt_headnums_ex += [int(opt_headnums[i])] * gpu_nums[i]
     result['seq_lens'] = opt_seqlens_ex
-    result['headnums'] = opt_headnums_ex
+    result['headnums_kv'] = opt_headnums_ex
     write_json_config(
         result, 
         f"examples/qwen/config/{args.model_name}_{args.cluster_type}_seqlen{args.seq_length}.json"

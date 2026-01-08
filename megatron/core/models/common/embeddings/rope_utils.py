@@ -59,14 +59,23 @@ def get_pos_emb_on_this_cp_rank(
         raise ValueError("cp_group must be provided to get positional embedding per CP rank")
     cp_size = cp_group.size()
     cp_rank = cp_group.rank()
-    cp_idx = torch.tensor(
-        [cp_rank, (2 * cp_size - cp_rank - 1)], device="cpu", pin_memory=True
-    ).cuda(non_blocking=True)
-    pos_emb = pos_emb.view(
-        *pos_emb.shape[:seq_dim], 2 * cp_size, -1, *pos_emb.shape[(seq_dim + 1) :]
-    )
-    pos_emb = pos_emb.index_select(seq_dim, cp_idx)
-    pos_emb = pos_emb.view(*pos_emb.shape[:seq_dim], -1, *pos_emb.shape[(seq_dim + 2) :])
+    
+    from megatron.training import get_args
+    args = get_args()
+
+    if hasattr(args, "heter_ulysses_seq_lens"):
+        seqlen_splits = args.heter_ulysses_seq_lens.tolist()
+        pos_emb = torch.split(pos_emb, seqlen_splits, dim=seq_dim)
+        pos_emb = pos_emb[cp_rank].contiguous()
+    else:
+        cp_idx = torch.tensor(
+            [cp_rank, (2 * cp_size - cp_rank - 1)], device="cpu", pin_memory=True
+        ).cuda(non_blocking=True)
+        pos_emb = pos_emb.view(
+            *pos_emb.shape[:seq_dim], 2 * cp_size, -1, *pos_emb.shape[(seq_dim + 1) :]
+        )
+        pos_emb = pos_emb.index_select(seq_dim, cp_idx)
+        pos_emb = pos_emb.view(*pos_emb.shape[:seq_dim], -1, *pos_emb.shape[(seq_dim + 2) :])
     return pos_emb
 
 

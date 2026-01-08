@@ -227,6 +227,11 @@ class RotaryEmbedding(nn.Module):
 
         rotary_seq_len *= transformer_config.context_parallel_size
 
+        from megatron.training import get_args
+        args = get_args()
+        if hasattr(args, "heter_ulysses_seq_lens"):
+            rotary_seq_len = args.seq_length
+
         return rotary_seq_len
 
 

@@ -2,7 +2,8 @@
 
 # Runs the Qwen3 0.6B model
 
-export CUDA_VISIBLE_DEVICES=2,3
+# export PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True'
+export CUDA_VISIBLE_DEVICES=0,2
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 # export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1
 
@@ -46,8 +47,8 @@ GPT_MODEL_ARGS=(
 TRAINING_ARGS=(
     --transformer-impl transformer_engine
     --use-mcore-models
-    --micro-batch-size 2 
-    --global-batch-size 2 
+    --micro-batch-size 4 
+    --global-batch-size 4 
     --weight-decay 0.1 
     --adam-beta1 0.9 
     --adam-beta2 0.95 
@@ -75,9 +76,10 @@ MODEL_PARALLEL_ARGS=(
 	--tensor-model-parallel-size 1 
 	--pipeline-model-parallel-size 1
     --context-parallel-size 2
-    --cp-comm-type a2a  
+    --cp-comm-type a2a 
+    --heter-ulysses-config-path examples/qwen/config/qwen3_0.6b_a6000x2_id12_seqlen4096.json
 )
-# --heter-ulysses-config-path examples/qwen/config/qwen3_0.6b_seq4096.json
+# 
 
 DATA_ARGS=(
     --tokenizer-type HuggingFaceTokenizer
@@ -98,4 +100,4 @@ torchrun ${DISTRIBUTED_ARGS[@]} pretrain_gpt.py \
     ${TRAINING_ARGS[@]} \
     ${MODEL_PARALLEL_ARGS[@]} \
     ${DATA_ARGS[@]} \
-    ${EVAL_AND_LOGGING_ARGS[@]} 2>&1 | tee logs/homo-ulysses-2a6000-`date +%F-%H%M`.log
+    ${EVAL_AND_LOGGING_ARGS[@]} 2>&1 | tee logs/heter-ulysses-2a6000-`date +%F-%H%M`.log
