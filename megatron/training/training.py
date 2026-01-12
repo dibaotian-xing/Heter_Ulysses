@@ -2224,26 +2224,28 @@ def train(
         # For GRPO, we keep the data for a few epochs. DeepSeekMath paper calls this number $\mu$.
         # It is similar to a PPO epoch.
 
-        if args.profile_heter_ulysses and iteration==20:
-            profile_attn_time_dict = \
-                model[0].module.module.decoder.layers[0].self_attention.core_attention.hu_time_config_dict
-            profile_attn_time_path = \
-                model[0].module.module.decoder.layers[0].self_attention.core_attention.heter_ulysses_time_config_path
-            heter_ulysses_time_config_dict = read_json_config(profile_attn_time_path) \
-                if os.path.exists(profile_attn_time_path) else {}
-            heter_ulysses_time_config_dict.update(profile_attn_time_dict)
-            write_json_config(heter_ulysses_time_config_dict, profile_attn_time_path)
-            print(f'Write heter ulysses time profiling result to {profile_attn_time_path}')
+        if args.profile_heter_ulysses != 'none' and iteration==40:
+            if args.profile_heter_ulysses == 'time':
+                profile_attn_time_dict = \
+                    model[0].module.module.decoder.layers[0].self_attention.core_attention.hu_time_config_dict
+                profile_attn_time_path = model[0].\
+                    module.module.decoder.layers[0].self_attention.core_attention.heter_ulysses_time_config_path
+                heter_ulysses_time_config_dict = read_json_config(profile_attn_time_path) \
+                    if os.path.exists(profile_attn_time_path) else {}
+                heter_ulysses_time_config_dict.update(profile_attn_time_dict)
+                write_json_config(heter_ulysses_time_config_dict, profile_attn_time_path)
+                print(f'Write heter ulysses time profiling result to {profile_attn_time_path}')
 
-            profile_attn_mem_dict = \
-                model[0].module.module.decoder.layers[0].self_attention.core_attention.hu_mem_config_dict
-            profile_attn_mem_path = \
-                model[0].module.module.decoder.layers[0].self_attention.core_attention.heter_ulysses_mem_config_path
-            heter_ulysses_mem_config_dict = read_json_config(profile_attn_mem_path) \
-                if os.path.exists(profile_attn_mem_path) else {}
-            heter_ulysses_mem_config_dict.update(profile_attn_mem_dict)
-            write_json_config(heter_ulysses_mem_config_dict, profile_attn_mem_path)
-            print(f'Write heter ulysses memory profiling result to {profile_attn_mem_path}')
+            if args.profile_heter_ulysses == 'memory' and args.gpu_type_id == 0:
+                profile_attn_mem_dict = \
+                    model[0].module.module.decoder.layers[0].self_attention.core_attention.hu_mem_config_dict
+                profile_attn_mem_path = model[0].\
+                    module.module.decoder.layers[0].self_attention.core_attention.heter_ulysses_mem_config_path
+                heter_ulysses_mem_config_dict = read_json_config(profile_attn_mem_path) \
+                    if os.path.exists(profile_attn_mem_path) else {}
+                heter_ulysses_mem_config_dict.update(profile_attn_mem_dict)
+                write_json_config(heter_ulysses_mem_config_dict, profile_attn_mem_path)
+                print(f'Write heter ulysses memory profiling result to {profile_attn_mem_path}')
             
             sys.exit(0)
 
@@ -2256,7 +2258,7 @@ def train(
                     )
                 train_data_iterator = buffered_rollouts
 
-        if args.profile_heter_ulysses:
+        if args.profile_heter_ulysses == 'memory':
             from ipalg.utils import profile_memory
             profile_memory(args, "Before Forward")
         

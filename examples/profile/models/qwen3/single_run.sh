@@ -2,7 +2,7 @@
 set -e
 set -x
 
-#should accept gpu_type_id, gpu_rank, hidden_size, num_attn_heads, num_gqa_groups
+#should accept gpu_type_id, gpu_rank, hidden_size, num_attn_heads, num_gqa_groups, profile_port, profile_type
 
 export CUDA_VISIBLE_DEVICES=$2
 export CUDA_DEVICE_MAX_CONNECTIONS=1
@@ -71,13 +71,12 @@ EVAL_AND_LOGGING_ARGS=(
 )
 
 PROFILE_HETER_ULYSSES_ARGS=(
-    --profile-heter-ulysses
-    --cluster-type $CLUSTER_TYPE
+    --profile-heter-ulysses $7
     --gpu-type-id $gpu_type_id
     --heter-ulysses-model-name $model_name
 )
 
-torchrun --nproc_per_node 1 pretrain_gpt.py \
+torchrun --nproc_per_node 1 --master_port $6 pretrain_gpt.py \
     ${GPT_MODEL_ARGS[@]} \
     ${TRAINING_ARGS[@]} \
     ${DATA_ARGS[@]} \

@@ -987,11 +987,15 @@ class TEDotProductAttention(te.pytorch.DotProductAttention):
             extra_kwargs['seqlen_per_gpu'] = args.heter_ulysses_seq_lens
             extra_kwargs['headnum_per_gpu_kv'] = args.heter_ulysses_headnums_kv
 
-        if args.profile_heter_ulysses:
+        if args.profile_heter_ulysses == 'time':
             extra_kwargs['seqlen_tot'] = args.seq_length
-            extra_kwargs['heter_ulysses_cluster_type'] = args.cluster_type
-            extra_kwargs['profile_heter_ulysses'] = True
+            extra_kwargs['profile_heter_ulysses'] = 'time'
             extra_kwargs['gpu_type_id'] = args.gpu_type_id
+            extra_kwargs['heter_ulysses_model_name'] = args.heter_ulysses_model_name
+
+        if args.profile_heter_ulysses == 'memory':
+            extra_kwargs['seqlen_tot'] = args.seq_length
+            extra_kwargs['profile_heter_ulysses'] = 'memory'
             extra_kwargs['heter_ulysses_model_name'] = args.heter_ulysses_model_name
 
         if get_te_version() < PkgVersion("1.10.0"):
