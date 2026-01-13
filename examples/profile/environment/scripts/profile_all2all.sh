@@ -15,7 +15,7 @@ export MASTER_ADDR=localhost
 export NCCL_SOCKET_IFNAME=eth0
 export NODE_RANK=0
 
-export CLUSTER_TYPE="a6000x2_id34_heter"
+export CLUSTER_TYPE="a6000x2_id34"
 
 DISTRIBUTED_ARGS="--nnodes=$NUM_NODES \
         --nproc_per_node=$NUM_GPUS_PER_NODE \

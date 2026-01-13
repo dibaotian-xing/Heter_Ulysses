@@ -3,7 +3,7 @@
 # Runs the Qwen3 0.6B model
 
 # export PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True'
-export CUDA_VISIBLE_DEVICES=0,2
+export CUDA_VISIBLE_DEVICES=3,4
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 # export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1
 
@@ -100,4 +100,4 @@ torchrun ${DISTRIBUTED_ARGS[@]} pretrain_gpt.py \
     ${TRAINING_ARGS[@]} \
     ${MODEL_PARALLEL_ARGS[@]} \
     ${DATA_ARGS[@]} \
-    ${EVAL_AND_LOGGING_ARGS[@]} 2>&1 | tee logs/heter-ulysses-2a6000-`date +%F-%H%M`.log
+    ${EVAL_AND_LOGGING_ARGS[@]} 2>&1 | tee logs/homo-2a6000-`date +%F-%H%M`.log

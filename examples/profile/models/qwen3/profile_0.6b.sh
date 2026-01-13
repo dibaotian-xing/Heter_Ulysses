@@ -23,7 +23,7 @@ export profile_port=(37001 37002) #profile_port[i] should be the master port use
 # for attn time profile
 export num_query_groups_diff=8
 # for tf layer time profile
-export seq_length_diff=3072
+export seq_length_diff=2048
 
 export SCRIPT_PATH='examples/profile/models/qwen3/single_run.sh'
 source examples/profile/profile_diff_settings.sh

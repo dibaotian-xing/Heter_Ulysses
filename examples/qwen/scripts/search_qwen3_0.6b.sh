@@ -1,4 +1,4 @@
-export CLUSTER_TYPE='a6000x2_id12'
+export CLUSTER_TYPE='a6000x2_id34'
 export model_name='qwen3_0.6b'
 export seq_length=4096
 export num_query_groups=8

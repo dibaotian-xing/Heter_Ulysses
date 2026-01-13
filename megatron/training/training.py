@@ -2236,7 +2236,7 @@ def train(
                 write_json_config(heter_ulysses_time_config_dict, profile_attn_time_path)
                 print(f'Write heter ulysses time profiling result to {profile_attn_time_path}')
 
-            if args.profile_heter_ulysses == 'memory' and args.gpu_type_id == 0:
+            if args.profile_heter_ulysses == 'memory':
                 profile_attn_mem_dict = \
                     model[0].module.module.decoder.layers[0].self_attention.core_attention.hu_mem_config_dict
                 profile_attn_mem_path = model[0].\

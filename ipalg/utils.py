@@ -57,20 +57,19 @@ def get_profile_mem_dict_and_path(args):
 
 
 def profile_memory(args, stage=""):
-    if args.gpu_type_id == 0:
-        local_rank = torch.distributed.get_rank()
-        other_key = f"seqlen{args.seq_length}_gqa_group{args.num_query_groups}_bsz{args.global_batch_size}"
-    
-        profile_mem_dict, profile_mem_path = get_profile_mem_dict_and_path(args)
-        
-        it = args.curr_iteration
+    local_rank = torch.distributed.get_rank()
+    other_key = f"seqlen{args.seq_length}_gqa_group{args.num_query_groups}_bsz{args.global_batch_size}"
 
-        if stage == "Before Forward":
-            torch.cuda.reset_peak_memory_stats(local_rank)
-            _, cur_mem = get_and_print_peak_memory("\n" + f"iter{it} " + stage, local_rank)
-        else:
-            _, cur_mem = get_and_print_peak_memory(f"iter{it} " + stage, local_rank)
-        
-        mem_dict_key = f"iter{it} {other_key} {stage}"
-        profile_mem_dict[mem_dict_key] = cur_mem
-        write_json_config(profile_mem_dict, profile_mem_path)
+    profile_mem_dict, profile_mem_path = get_profile_mem_dict_and_path(args)
+    
+    it = args.curr_iteration
+
+    if stage == "Before Forward":
+        torch.cuda.reset_peak_memory_stats(local_rank)
+        _, cur_mem = get_and_print_peak_memory("\n" + f"iter{it} " + stage, local_rank)
+    else:
+        _, cur_mem = get_and_print_peak_memory(f"iter{it} " + stage, local_rank)
+    
+    mem_dict_key = f"iter{it} {other_key} {stage}"
+    profile_mem_dict[mem_dict_key] = cur_mem
+    write_json_config(profile_mem_dict, profile_mem_path)
