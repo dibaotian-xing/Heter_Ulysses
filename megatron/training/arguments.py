@@ -1025,6 +1025,11 @@ def validate_args(args, defaults={}):
             args.heter_ulysses_seq_lens = torch.from_numpy(heter_ulysses_seq_lens)
             args.heter_ulysses_headnums_kv = torch.from_numpy(heter_ulysses_headnums_kv)
 
+    if args.print_avg_throughput:
+        assert args.log_interval == 1 and args.train_iters == 60, "when set --print-avg-throughput," \
+            "--log-interval should be 1 and --train-iters should be 60."
+        args.total_heter_ulysses_time = 0
+
     # Expert parallelism check
     if args.expert_model_parallel_size  > 1:
         assert args.num_experts is not None, "num_experts must be non None to use expert model parallelism"
@@ -2114,6 +2119,9 @@ def _add_training_args(parser):
                        help='The gpu type index of current gpu rank. Used in heter ulysses profiling.')
     group.add_argument('--heter-ulysses-model-name', type=str, default=None,
                        help='the model name in heter ulysses profiling.')
+    group.add_argument('--print-avg-throughput', action='store_true',
+                       help='whether to print average training throughput. Used in heter ulysses.'
+                       'If set, will print average throughput of iteration 11 to 60.')
 
     # deprecated
     group.add_argument('--checkpoint-activations', action='store_true',

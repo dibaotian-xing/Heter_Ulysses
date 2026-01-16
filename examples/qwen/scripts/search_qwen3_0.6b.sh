@@ -1,4 +1,4 @@
-export CLUSTER_TYPE='a6000x2_id34'
+export CLUSTER_TYPE='a6000x2_id34_heter_150w'
 export model_name='qwen3_0.6b'
 export seq_length=4096
 export num_query_groups=8
@@ -7,7 +7,7 @@ export num_hidden_layers=32
 export num_attention_heads=16
 export head_dim=128
 export gpu_num_list=(1 1) #gpu nums for different gpu types
-export gpu_capacity_list=(43 43) #gpu capacity for different gpu types
+export gpu_capacity_list=(40 40) #gpu capacity for different gpu types
 export model_parameter_size=0.6
 export precision='fp16'
 

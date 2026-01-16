@@ -77,7 +77,7 @@ MODEL_PARALLEL_ARGS=(
 	--pipeline-model-parallel-size 1
     --context-parallel-size 2
     --cp-comm-type a2a 
-    --heter-ulysses-config-path examples/qwen/config/qwen3_0.6b_a6000x2_id12_seqlen4096.json
+    --heter-ulysses-config-path examples/qwen/config/qwen3_0.6b_a6000x2_id34_heter_150w_seqlen4096.json
 )
 # 
 
@@ -92,7 +92,8 @@ EVAL_AND_LOGGING_ARGS=(
     --log-interval 1
     --eval-interval 1000 
     --eval-iters 1
-    --train-iters 10
+    --train-iters 60
+    --print-avg-throughput
 )
 
 torchrun ${DISTRIBUTED_ARGS[@]} pretrain_gpt.py \
@@ -100,4 +101,4 @@ torchrun ${DISTRIBUTED_ARGS[@]} pretrain_gpt.py \
     ${TRAINING_ARGS[@]} \
     ${MODEL_PARALLEL_ARGS[@]} \
     ${DATA_ARGS[@]} \
-    ${EVAL_AND_LOGGING_ARGS[@]} 2>&1 | tee logs/homo-2a6000-`date +%F-%H%M`.log
+    ${EVAL_AND_LOGGING_ARGS[@]} 2>&1 | tee logs/heter-ulysses-2a6000-ba-`date +%F-%H%M`.log

@@ -131,21 +131,21 @@ def time_config_post_process(args):
         # attn time for less seqlen
         attn_time_per_gqa_group_seqlen_less = get_attn_time_per_gqa_group(
             config_dict[i], args.num_query_groups, args.num_query_groups + args.num_query_groups_diff,
-            args.seq_length - args.seq_length_diff, args.gpu_type_id_list[i], args.batch_size
+            args.seq_length, args.gpu_type_id_list[i], args.batch_size
         )
         attn_time_seqlen_less_list.append(attn_time_per_gqa_group_seqlen_less)
         
         # attn time for more seqlen
         attn_time_per_gqa_group_seqlen_more = get_attn_time_per_gqa_group(
             config_dict[i], args.num_query_groups, args.num_query_groups + args.num_query_groups_diff,
-            args.seq_length, args.gpu_type_id_list[i], args.batch_size
+            args.seq_length + args.seq_length_diff, args.gpu_type_id_list[i], args.batch_size
         )
         attn_time_seqlen_more_list.append(attn_time_per_gqa_group_seqlen_more)
 
         # other time for less gqa group
         other_time_per_token = get_other_time_per_token(
             config_dict[i], args.num_query_groups, 
-            args.seq_length - args.seq_length_diff, args.seq_length,
+            args.seq_length, args.seq_length + args.seq_length_diff,
             args.gpu_type_id_list[i], args.batch_size, 
             attn_time_per_gqa_group_seqlen_less, attn_time_per_gqa_group_seqlen_more
         )
@@ -154,9 +154,9 @@ def time_config_post_process(args):
     result_config_path = f'examples/profile/models/configs/profile_time_{args.model_name}' \
                      f'_{args.cluster_type}.json'
     result_config_dict = dict()
-    result_config_dict[f"attn_time_per_gqa_group_seqlen{args.seq_length - args.seq_length_diff}"] = \
-        attn_time_seqlen_less_list
     result_config_dict[f"attn_time_per_gqa_group_seqlen{args.seq_length}"] = \
+        attn_time_seqlen_less_list
+    result_config_dict[f"attn_time_per_gqa_group_seqlen{args.seq_length + args.seq_length_diff}"] = \
         attn_time_seqlen_more_list
     result_config_dict["other_time_per_token"] = other_time_list
     write_json_config(result_config_dict, result_config_path)
@@ -168,21 +168,21 @@ def mem_config_post_process(args):
     config_dict = read_json_config(config_path)
     attn_mem_less_seqlen = get_attn_act_per_gqa_group(
         config_dict, args.num_query_groups, args.num_query_groups + args.num_query_groups_diff, 
-        args.seq_length - args.seq_length_diff, args.batch_size
-    )
-    config_dict[f"attn_act_mem_per_gqa_group_seqlen{args.seq_length - args.seq_length_diff}"] = attn_mem_less_seqlen
-    attn_mem_more_seqlen = get_attn_act_per_gqa_group(
-        config_dict, args.num_query_groups, args.num_query_groups + args.num_query_groups_diff, 
         args.seq_length, args.batch_size
     )
-    config_dict[f"attn_act_mem_per_gqa_group_seqlen{args.seq_length}"] = attn_mem_more_seqlen
+    config_dict[f"attn_act_mem_per_gqa_group_seqlen{args.seq_length}"] = attn_mem_less_seqlen
+    attn_mem_more_seqlen = get_attn_act_per_gqa_group(
+        config_dict, args.num_query_groups, args.num_query_groups + args.num_query_groups_diff, 
+        args.seq_length + args.seq_length_diff, args.batch_size
+    )
+    config_dict[f"attn_act_mem_per_gqa_group_seqlen{args.seq_length + args.seq_length_diff}"] = attn_mem_more_seqlen
     tf_layer_other_mem_per_token = get_tf_layer_other_act_per_token(
-        config_dict, args.num_query_groups, args.seq_length - args.seq_length_diff, args.seq_length,
+        config_dict, args.num_query_groups, args.seq_length, args.seq_length + args.seq_length_diff,
         args.batch_size, attn_mem_less_seqlen, attn_mem_more_seqlen
     )
     config_dict["tf_layer_other_act_mem_per_token"] = tf_layer_other_mem_per_token
     other_layer_mem_per_token = get_other_layer_act_per_token(
-        config_dict, args.num_query_groups, args.seq_length - args.seq_length_diff, args.seq_length, args.batch_size
+        config_dict, args.num_query_groups, args.seq_length, args.seq_length + args.seq_length_diff, args.batch_size
     )
     config_dict["other_layer_act_mem_per_token"] = other_layer_mem_per_token
     write_json_config(config_dict, config_path)
