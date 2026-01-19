@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Runs the Qwen3 0.6B model
+# Runs the Qwen3 8B model
 
 # export PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True'
-export CUDA_VISIBLE_DEVICES=0,1
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 # export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1
 
-GPUS_PER_NODE=2
+GPUS_PER_NODE=8
 # Change for multinode config
 MASTER_ADDR=localhost
 MASTER_PORT=6000
@@ -15,12 +15,12 @@ NUM_NODES=1
 NODE_RANK=0
 WORLD_SIZE=$(($GPUS_PER_NODE*$NUM_NODES))
 
-CHECKPOINT_PATH=/data/Qwen3-0.6B-mcore #<Specify path>
+CHECKPOINT_PATH=/data/Qwen3-8B-mcore #<Specify path>
 # TENSORBOARD_LOGS_PATH=$2 #<Specify path>
 # VOCAB_FILE=$3 #<Specify path to file>/gpt2-vocab.json
 # MERGE_FILE=$4 #<Specify path to file>/gpt2-merges.txt
 DATA_PATH=/home/lijie/data/gpt2_small_document/my-gpt2-small_text_document #<Specify path and file prefix>_text_document
-TOKENIZER_MODEL_PATH=/data/Qwen3-0.6B-hf
+TOKENIZER_MODEL_PATH=/data/Qwen3-8B-hf
 
 DISTRIBUTED_ARGS=(
     --nproc_per_node $GPUS_PER_NODE 
@@ -30,10 +30,10 @@ DISTRIBUTED_ARGS=(
 )
 
 GPT_MODEL_ARGS=(
-    --num-layers 28 
-    --hidden-size 1024
-    --ffn-hidden-size 3072 
-    --num-attention-heads 16 
+    --num-layers 36 
+    --hidden-size 4096
+    --ffn-hidden-size 12288 
+    --num-attention-heads 32 
     --seq-length 4096 
     --max-position-embeddings 4096
     --num-query-groups 8
@@ -70,15 +70,17 @@ TRAINING_ARGS=(
     --overlap-grad-reduce
     --use-flash-attn
     --no-gradient-accumulation-fusion
+    --use-distributed-optimizer
+    --no-load-optim
 )
 
 MODEL_PARALLEL_ARGS=(
 	--tensor-model-parallel-size 1 
 	--pipeline-model-parallel-size 1
-    --context-parallel-size 2
+    --context-parallel-size 8
     --cp-comm-type a2a 
 )
-# --heter-ulysses-config-path examples/qwen/config/qwen3_0.6b_a800x2_id01_heter_200w_seqlen4096.json
+# --heter-ulysses-config-path examples/qwen/config/qwen3_8b_a800_x4+a800_150w_x4_seqlen4096.json
 
 DATA_ARGS=(
     --tokenizer-type HuggingFaceTokenizer
@@ -86,6 +88,7 @@ DATA_ARGS=(
     --data-path $DATA_PATH 
     --split 949,50,1
 )
+# --load ${CHECKPOINT_PATH}
 
 EVAL_AND_LOGGING_ARGS=(
     --log-interval 1
@@ -100,4 +103,4 @@ torchrun ${DISTRIBUTED_ARGS[@]} pretrain_gpt.py \
     ${TRAINING_ARGS[@]} \
     ${MODEL_PARALLEL_ARGS[@]} \
     ${DATA_ARGS[@]} \
-    ${EVAL_AND_LOGGING_ARGS[@]} 2>&1 | tee logs/homo-2a800-heter-100w-`date +%F-%H%M`.log
+    ${EVAL_AND_LOGGING_ARGS[@]} 2>&1 | tee logs/homo-8a800-120w-`date +%F-%H%M`.log

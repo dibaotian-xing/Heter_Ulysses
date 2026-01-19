@@ -55,7 +55,11 @@ def search(args):
     mem_g = profile_mem_dict[attn_act_mem_per_gqa_group_key]
     mem_l = profile_mem_dict["tf_layer_other_act_mem_per_token"]
     mem_e = profile_mem_dict["other_layer_act_mem_per_token"]
-    model_states_size = args.model_parameter_size * 18 # fp32 grad accumulation
+    if not args.use_distributed_optimizer:
+        model_states_size = args.model_parameter_size * 18 # fp32 grad accumulation
+    else:
+        model_states_size = args.model_parameter_size * 2 + \
+            args.model_parameter_size * 16 / tot_gpu_num # fp32 grad accumulation
     M = (np.array(args.gpu_type_mem_capacity_list) - model_states_size) * 1024 - pytorch_context_mem
     precision = args.precision
 
@@ -132,5 +136,7 @@ if __name__ == "__main__":
                        help='The size of model parameter. Use B as the unit. Default=None')
     parser.add_argument("--precision", type=str, default='fp32', choices=['fp32', 'fp16', 'bf16'], 
                        help="precision for the model. Default=fp32")
+    parser.add_argument("--use-distributed-optimizer", action="store_true",
+                       help="whether to use distributed optimizer")
     args = parser.parse_args()
     search(args)

@@ -6,16 +6,16 @@ set -x
 export PYTHONPATH=$PWD:$PYTHONPATH
 
 export NUM_NODES=1
-export NUM_GPUS_PER_NODE=2
+export NUM_GPUS_PER_NODE=8
 export MASTER_PORT=9991
-export CUDA_VISIBLE_DEVICES=3,4
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
 export MASTER_ADDR=localhost
 export NCCL_SOCKET_IFNAME=eth0
 export NODE_RANK=0
 
-export CLUSTER_TYPE="a6000x2_id34_heter_150w"
+export CLUSTER_TYPE="a800_x4+a800_150w_x4"
 
 DISTRIBUTED_ARGS="--nnodes=$NUM_NODES \
         --nproc_per_node=$NUM_GPUS_PER_NODE \
