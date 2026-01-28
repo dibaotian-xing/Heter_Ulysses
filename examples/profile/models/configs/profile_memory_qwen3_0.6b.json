@@ -1443,7 +1443,7 @@
     "iter38 seqlen6144_gqa_group16_bsz4 After CoreAttention": 7707.0908203125,
     "iter39 seqlen6144_gqa_group16_bsz4 Before CoreAttention": 7512.09033203125,
     "iter39 seqlen6144_gqa_group16_bsz4 After CoreAttention": 7707.0908203125,
-    "attn_act_mem_per_gqa_group_seqlen6144": 3.03125,
+    "attn_act_mem_per_gqa_group_seqlen6144": 2.984375,
     "iter0 seqlen4096_gqa_group12_bsz4 Before Forward": 2491.92431640625,
     "iter0 seqlen4096_gqa_group12_bsz4 Before Transformer Layer": 2606.3623046875,
     "iter0 seqlen4096_gqa_group12_bsz4 After Transformer Layer": 3526.36328125,

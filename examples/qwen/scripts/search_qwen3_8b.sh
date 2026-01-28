@@ -1,14 +1,14 @@
-export CLUSTER_TYPE='a800x2_id01_heter_100w'
-export model_name='qwen3_0.6b'
+export CLUSTER_TYPE='a800_x4+a800_150w_x4'
+export model_name='qwen3_8b'
 export seq_length=4096
 export num_query_groups=8
 export batch_size=4
-export num_hidden_layers=32
-export num_attention_heads=16
+export num_hidden_layers=36
+export num_attention_heads=32
 export head_dim=128
-export gpu_num_list=(1 1) #gpu nums for different gpu types
-export gpu_capacity_list=(67 67) #gpu capacity for different gpu types
-export model_parameter_size=0.6
+export gpu_num_list=(4 4) #gpu nums for different gpu types
+export gpu_capacity_list=(75 75) #gpu capacity for different gpu types
+export model_parameter_size=8
 export precision='fp16'
 
 python ipalg/search.py \
@@ -23,4 +23,5 @@ python ipalg/search.py \
     --gpu_type_num_list "${gpu_num_list[@]}" \
     --gpu_type_mem_capacity_list "${gpu_capacity_list[@]}" \
     --model_parameter_size $model_parameter_size \
-    --precision $precision
+    --precision $precision \
+    --use-distributed-optimizer
