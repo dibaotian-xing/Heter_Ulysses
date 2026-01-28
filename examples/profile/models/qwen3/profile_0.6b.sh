@@ -15,7 +15,7 @@ export profile_bsz=4
 export seq_length=4096
 
 # heterogeneous settings, each gpu type should choose one rank to be profiled
-export CLUSTER_TYPE="a6000x2_id34_heter_150w"
+export CLUSTER_TYPE="a6000x2_id34_heter_200w" # 
 export gpu_type_id=(0 1) # the indexes of gpu types of this node
 export gpu_type_rank=(3 4) # gpu_type_rank[i] should be a rank belongs to gpu_type_id[i]
 export profile_port=(37001 37002) #profile_port[i] should be the master port used by gpu_type_id[i]
@@ -23,7 +23,7 @@ export profile_port=(37001 37002) #profile_port[i] should be the master port use
 # for attn time profile
 export num_query_groups_diff=4
 # for tf layer time profile
-export seq_length_diff=2048
+export seq_length_diff=1024
 
 export SCRIPT_PATH='examples/profile/models/qwen3/single_run.sh'
 source examples/profile/profile_diff_settings.sh
