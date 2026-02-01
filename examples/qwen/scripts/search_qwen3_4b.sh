@@ -1,14 +1,14 @@
 export CLUSTER_TYPE='a6000ada_x4+a6000sim_x4'
-export model_name='qwen3_0.6b'
-export seq_length=10240
+export model_name='qwen3_4b'
+export seq_length=8192
 export num_query_groups=8
-export batch_size=2
-export num_hidden_layers=28
-export num_attention_heads=16
+export batch_size=1
+export num_hidden_layers=36
+export num_attention_heads=32
 export head_dim=128
 export gpu_num_list=(4 4) #gpu nums for different gpu types
 export gpu_capacity_list=(43 43) #gpu capacity for different gpu types
-export model_parameter_size=0.6
+export model_parameter_size=4
 export precision='fp16'
 
 python ipalg/search.py \
@@ -23,4 +23,5 @@ python ipalg/search.py \
     --gpu_type_num_list "${gpu_num_list[@]}" \
     --gpu_type_mem_capacity_list "${gpu_capacity_list[@]}" \
     --model_parameter_size $model_parameter_size \
-    --precision $precision
+    --precision $precision \
+    --use-distributed-optimizer

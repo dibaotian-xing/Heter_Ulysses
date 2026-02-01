@@ -36,7 +36,7 @@ def get_attn_time_per_gqa_group(config_dict, gqa_group_less, gqa_group_more, seq
     mean_more_per_sample = sum_more / (30 * bsz)
 
     print(f"{mean_more_per_sample=}, {mean_less_per_sample=}")
-    return (mean_more_per_sample - mean_less_per_sample)/(gqa_group_more - gqa_group_less), \
+    return (mean_more_per_sample / gqa_group_more + mean_less_per_sample / gqa_group_less) / 2, \
             mean_less_per_sample
 
 
@@ -58,7 +58,7 @@ def get_other_time_per_token(
     other_time_seqlen_more = mean_more_per_sample - attn_time_seqlen_more
 
     print(f"{other_time_seqlen_more=}, {other_time_seqlen_less=}")
-    return (other_time_seqlen_more - other_time_seqlen_less)/(seqlen_more - seqlen_less)
+    return (other_time_seqlen_more / seqlen_more + other_time_seqlen_less / seqlen_less) / 2
 
 
 def get_attn_act_per_gqa_group(config_dict, gqa_group_less, gqa_group_more, seqlen, bsz):
